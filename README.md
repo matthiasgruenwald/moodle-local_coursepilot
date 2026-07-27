@@ -1,98 +1,97 @@
 # local_coursepilot
 
-**Coursepilot** – Moodle-Plugin für KI-gestützten Kursaufbau via Webservice / MCP.
+**Coursepilot** – Moodle plugin for AI-supported course authoring via webservice / MCP.
 
-Dies ist das Moodle-Plugin (Komponente `local_coursepilot`, Moodle **5.0 oder neuer**).
-Es ist nur zusammen mit dem lokal laufenden Coursepilot-MCP sinnvoll nutzbar. Das primäre
-Entwicklungs-, Support- und Issue-Repository (MCP, Installer, Skills, Tests) ist
-[matthiasgruenwald/moodle-coursepilot](https://github.com/matthiasgruenwald/moodle-coursepilot); dieser
-Plugin-Quellbaum wird als schreibgeschützter Mirror
+This is the Moodle plugin (component `local_coursepilot`, Moodle **5.0 or newer**).
+It is only useful together with the local Coursepilot MCP. The primary
+development, support and issue repository (MCP, installer, skills, tests) is
+[matthiasgruenwald/moodle-coursepilot](https://github.com/matthiasgruenwald/moodle-coursepilot);
+this plugin source tree is published as a read-only mirror
 ([matthiasgruenwald/moodle-local_coursepilot](https://github.com/matthiasgruenwald/moodle-local_coursepilot))
-für das Moodle Plugin Directory veröffentlicht. Entwicklung, Issues und Support finden
-ausschließlich im primären Repository statt.
+for the Moodle Plugin Directory. Development, issues and support happen
+exclusively in the primary repository.
 
-## Lizenz
+## License
 
-Das Moodle-Plugin `local_coursepilot` steht unter **GPL-3.0-or-later** (siehe
-[LICENSE](LICENSE)). Der begleitende Coursepilot-MCP-Server und der Installer im
-primären Repository stehen unter AGPL-3.0-or-later; für das Plugin gilt die GPL.
+The Moodle plugin `local_coursepilot` is licensed under **GPL-3.0-or-later** (see
+[LICENSE](LICENSE)). The accompanying Coursepilot MCP server and installer in the
+primary repository are licensed under AGPL-3.0-or-later; the plugin itself is GPL.
 
-## Bereitgestellte Webservice-Funktionen
+## Provided webservice functions
 
-| Funktion | Beschreibung |
+| Function | Description |
 |---|---|
-| `local_coursepilot_create_page` | Erstellt eine Textseite (mod_page) in einem Kursabschnitt |
-| `local_coursepilot_create_assign` | Erstellt eine Aufgabe (mod_assign) in einem Kursabschnitt |
-| `local_coursepilot_update_section` | Setzt Name und Zusammenfassung eines Abschnitts |
-| `local_coursepilot_get_sections` | Gibt alle Abschnitte eines Kurses zurück |
+| `local_coursepilot_create_page` | Creates a page (mod_page) in a course section |
+| `local_coursepilot_create_assign` | Creates an assignment (mod_assign) in a course section |
+| `local_coursepilot_update_section` | Sets the name and summary of a section |
+| `local_coursepilot_get_sections` | Returns all sections of a course |
 
 ---
 
 ## Installation
 
-Voraussetzung: Moodle **5.0 oder neuer**.
+Requirement: Moodle **5.0 or newer**.
 
-1. **ZIP entpacken** in `[moodle-root]/local/coursepilot/`
-2. Moodle-Admin-Bereich öffnen → **Upgrade durchführen**
-3. Fertig – das Plugin ist installiert
+1. **Unzip** into `[moodle-root]/local/coursepilot/`
+2. Open the Moodle admin area → **Run upgrade**
+3. Done – the plugin is installed
 
-> **Wichtig – Neuinstallation bei alter Komponente:** Coursepilot nutzt jetzt die
-> Komponente `local_coursepilot`. Falls noch die alte Komponente `local_aicoursecreator`
-> installiert ist, **deinstallieren** Sie diese zuerst (Website-Administration → Plugins →
-> Plugins verwalten) und installieren Sie danach `local_coursepilot` neu. Eine Migration
-> von Daten, Einstellungen oder Webservices aus `local_aicoursecreator` gibt es bewusst
-> nicht.
-
----
-
-## Datenschutz und KI-Client
-
-Das Plugin ruft **selbst keinen KI-Anbieter** auf. Coursepilot nutzt einen **lokal** auf dem
-Rechner der Lehrkraft konfigurierten KI-Client; erst wenn die Lehrkraft Kursinhalte an diesen
-Client übergibt, können sie an dessen Anbieter übertragen werden.
-
-Coursepilot ist ausschließlich für die Kursgestaltung durch die Lehrkraft gedacht und gibt
-**keine Lernendendaten** frei – insbesondere keine Aufgabenabgaben, Forenbeiträge,
-Quizversuche, Bewertungen oder Teilnehmendenlisten. Die Moodle-Privacy-API beschreibt dieses
-Verhalten über einen `null_provider` (keine gespeicherten personenbezogenen Daten).
+> **Important – fresh install when the old component is present:** Coursepilot now
+> uses the component `local_coursepilot`. If the old component `local_aicoursecreator`
+> is still installed, **uninstall** it first (Site administration → Plugins →
+> Manage plugins) and then install `local_coursepilot`. There is deliberately no
+> migration of data, settings or web services from `local_aicoursecreator`.
 
 ---
 
-## Sprachen
+## Privacy and AI client
 
-Englisch (`lang/en/local_coursepilot.php`) ist die Basissprache. Deutsch wird in der
-Übergangsphase **vorübergehend** mitgeliefert (`lang/de/local_coursepilot.php`), bis die
-Übersetzung über **AMOS** gepflegt wird; danach wird die mitgelieferte deutsche Datei in
-einem frühen Release entfernt.
+The plugin itself **does not call any AI provider**. Coursepilot uses an AI client
+configured **locally** on the teacher's machine; only when the teacher hands course
+content to that client can it be transmitted to the client's provider.
+
+Coursepilot is intended exclusively for course authoring by the teacher and exposes
+**no learner data** – in particular no assignment submissions, forum posts, quiz
+attempts, grades or participant lists. The Moodle privacy API describes this
+behaviour via a `null_provider` (no stored personal data).
 
 ---
 
-## Konfiguration (Webservice + Token)
+## Languages
 
-### 1. Web Services aktivieren
-`Website-Administration → Erweiterte Funktionen → Webservices aktivieren` ✅
+English (`lang/en/local_coursepilot.php`) is the base language. German is bundled
+**temporarily** during the transition (`lang/de/local_coursepilot.php`) until the
+translation is maintained via **AMOS**; afterwards the bundled German file will be
+removed in an early release.
 
-### 2. REST-Protokoll aktivieren
-`Website-Administration → Plugins → Webservices → Protokolle verwalten → REST` ✅
+---
 
-### 3. Token erstellen
-`Nutzerfeld oben → Einstellungen → Sicherheitsschlüssel`
-- **Nutzer**: Lehrkraft mit globaler **Kurspilot-Nutzungsrolle** fuer Token/REST
-- **Kursrechte**: Lesen und Schreiben laufen weiterhin ueber die Trainerrechte im jeweiligen Kurs; die Kurspilot-Nutzungsrolle verleiht selbst keine Kursbearbeitung
-- **Dienst**: `Coursepilot`
-- Token kopieren und sicher aufbewahren
+## Configuration (webservice + token)
 
-### 4. Mit MCP verbinden (webservice_mcp Plugin)
-MCP-Endpoint:
+### 1. Enable web services
+`Site administration → Advanced features → Enable web services` ✅
+
+### 2. Enable the REST protocol
+`Site administration → Plugins → Web services → Manage protocols → REST` ✅
+
+### 3. Create a token
+`User menu → Preferences → Security keys`
+- **Service:** `Coursepilot`
+- **Who can use it:** any user who can create a security key for the `Coursepilot` service. The service has no authorised-users list (`restrictedusers=0`); there is no dedicated Coursepilot role.
+- **Permissions:** what a user can do via the API is limited by their own Moodle capabilities in each course (e.g. editing teacher rights), in addition to the `local/coursepilot:use` capability (allowed by default for teachers and editing teachers). The API never grants anything a user could not already do on the website.
+- Copy the token and store it securely.
+
+### 4. Connect via MCP (webservice_mcp plugin)
+MCP endpoint:
 ```
-https://DEINE-MOODLE-URL/webservice/mcp/server.php?wstoken=DEIN_TOKEN
+https://YOUR-MOODLE-URL/webservice/mcp/server.php?wstoken=YOUR_TOKEN
 ```
 
 ---
 
-## Beispiel-API-Aufruf (REST)
+## Example API call (REST)
 
-### Textseite erstellen
+### Create a page
 ```
 POST https://moodle.example.com/webservice/rest/server.php
 wstoken=abc123
@@ -100,11 +99,11 @@ wsfunction=local_coursepilot_create_page
 moodlewsrestformat=json
 courseid=5
 sectionnum=1
-name=Einführung in das Thema
-content=<p>Willkommen in diesem Abschnitt...</p>
+name=Introduction to the topic
+content=<p>Welcome to this section...</p>
 ```
 
-### Aufgabe erstellen
+### Create an assignment
 ```
 POST https://moodle.example.com/webservice/rest/server.php
 wstoken=abc123
@@ -112,59 +111,59 @@ wsfunction=local_coursepilot_create_assign
 moodlewsrestformat=json
 courseid=5
 sectionnum=1
-name=Aufgabe 1: Recherche
-description=<p>Recherchiere folgende Themen...</p>
+name=Assignment 1: Research
+description=<p>Research the following topics...</p>
 duedate=1735689600
 maxfiles=3
 ```
 
-### Abschnitt benennen
+### Name a section
 ```
 POST .../server.php
 wsfunction=local_coursepilot_update_section
 courseid=5
 sectionnum=1
-name=Lerneinheit 1: Grundlagen
-summary=<p>In diesem Abschnitt lernst du...</p>
+name=Unit 1: Basics
+summary=<p>In this section you will learn...</p>
 ```
 
 ---
 
-## Parameter-Referenz
+## Parameter reference
 
 ### create_page
-| Parameter | Typ | Pflicht | Beschreibung |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| courseid | int | ✅ | Kurs-ID |
-| sectionnum | int | ✅ | Abschnittsnummer (0-basiert) |
-| name | string | ✅ | Titel der Textseite |
-| content | string | ✅ | HTML-Inhalt |
-| visible | int | – | 1=sichtbar (Standard), 0=versteckt |
+| courseid | int | ✅ | Course ID |
+| sectionnum | int | ✅ | Section number (0-based) |
+| name | string | ✅ | Page title |
+| content | string | ✅ | HTML content |
+| visible | int | – | 1=visible (default), 0=hidden |
 
 ### create_assign
-| Parameter | Typ | Pflicht | Beschreibung |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| courseid | int | ✅ | Kurs-ID |
-| sectionnum | int | ✅ | Abschnittsnummer (0-basiert) |
-| name | string | ✅ | Titel der Aufgabe |
-| description | string | – | HTML-Beschreibung |
-| duedate | int | – | Abgabedatum als Unix-Timestamp (0 = kein Datum) |
-| allowsubmissionsfromdate | int | – | Freischaltdatum (0 = sofort) |
-| maxfiles | int | – | Max. Dateiuploads (Standard: 1, 0 = kein Upload) |
-| submissiondrafts | int | – | 1 = Schüler müssen Submit klicken |
-| visible | int | – | 1=sichtbar (Standard) |
+| courseid | int | ✅ | Course ID |
+| sectionnum | int | ✅ | Section number (0-based) |
+| name | string | ✅ | Assignment title |
+| description | string | – | HTML description |
+| duedate | int | – | Due date as Unix timestamp (0 = no date) |
+| allowsubmissionsfromdate | int | – | Allow submissions from (0 = immediately) |
+| maxfiles | int | – | Max file uploads (default: 1, 0 = no upload) |
+| submissiondrafts | int | – | 1 = students must click submit |
+| visible | int | – | 1=visible (default) |
 
 ### update_section
-| Parameter | Typ | Pflicht | Beschreibung |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| courseid | int | ✅ | Kurs-ID |
-| sectionnum | int | ✅ | Abschnittsnummer |
-| name | string | – | Abschnittsname |
-| summary | string | – | HTML-Zusammenfassung |
-| visible | int | – | 1=sichtbar (Standard) |
+| courseid | int | ✅ | Course ID |
+| sectionnum | int | ✅ | Section number |
+| name | string | – | Section name |
+| summary | string | – | HTML summary |
+| visible | int | – | 1=visible (default) |
 
 ---
 
-## Kompatibilität
-- Moodle 5.0 oder neuer
-- PHP 8.1 oder neuer (Moodle-5.0-Unterstützung)
+## Compatibility
+- Moodle 5.0 or newer
+- PHP 8.1 or newer (Moodle 5.0 support)
