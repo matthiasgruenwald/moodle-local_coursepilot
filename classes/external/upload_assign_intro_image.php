@@ -51,6 +51,12 @@ class upload_assign_intro_image extends external_api {
         if ($filedata === false) {
             throw new \invalid_parameter_exception('Ungueltige Base64-Kodierung.');
         }
+        $detectedmimetype = finfo_buffer(new \finfo(FILEINFO_MIME_TYPE), $filedata) ?: 'application/octet-stream';
+        if (!str_starts_with($detectedmimetype, 'image/')) {
+            throw new \invalid_parameter_exception(
+                'Hochgeladene Datei ist kein Bild (erkannt: ' . $detectedmimetype . '). Nur Bilddateien können eingebettet werden.'
+            );
+        }
 
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
         $fs = get_file_storage();
@@ -76,7 +82,7 @@ class upload_assign_intro_image extends external_api {
             'itemid'    => 0,
             'filepath'  => '/',
             'filename'  => $params['filename'],
-            'mimetype'  => $params['mimetype'],
+            'mimetype'  => $detectedmimetype,
             'userid'    => $USER->id,
             'source'    => $params['filename'],
             'author'    => fullname($USER),

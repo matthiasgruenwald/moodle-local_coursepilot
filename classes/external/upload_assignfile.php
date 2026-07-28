@@ -51,6 +51,7 @@ class upload_assignfile extends external_api {
         if ($filedata === false) {
             throw new \invalid_parameter_exception('Ungueltige Base64-Kodierung.');
         }
+        $detectedmimetype = finfo_buffer(new \finfo(FILEINFO_MIME_TYPE), $filedata) ?: 'application/octet-stream';
 
         $fs = get_file_storage();
 
@@ -80,7 +81,7 @@ class upload_assignfile extends external_api {
             'itemid'    => 0,
             'filepath'  => '/',
             'filename'  => $params['filename'],
-            'mimetype'  => $params['mimetype'],
+            'mimetype'  => $detectedmimetype,
             'userid'    => $USER->id,
             'source'    => $params['filename'],
             'author'    => fullname($USER),
