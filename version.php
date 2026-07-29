@@ -9,12 +9,26 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072900;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072901;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.36';
+$plugin->release   = '1.0.37';
 
 // Changelog:
+// 1.0.37 (2026072901) – Neu (#221): Aktivitaets-MCP Datei (mod_resource).
+//   - create_resource.php: legt eine Datei-Ressource (mod_resource) in einem
+//     Kursabschnitt an und speichert eine Base64-Datei als Hauptdatei im
+//     Content-Dateibereich (component mod_resource, filearea content, itemid 0,
+//     sortorder 1). Nutzt add_moduleinfo() (delegiert an resource_add_instance)
+//     und die file_storage-API; Rueckgabe enthaelt cmid, fileid, filename.
+//     Moodle 5.0: resource_add_instance() liest $moduleinfo->files
+//     unconditional, daher wird files=0 gesetzt (Hauptdatei entsteht erst
+//     danach direkt im content-Filearea, analog zum cmidnumber-Fix #2/#6).
+//   - update_resource.php: aendert den Namen und/oder tauscht die Hauptdatei
+//     aus (alte Content-Dateien loeschen, neue anlegen, revision erhoehen).
+//   - db/services.php: local_coursepilot_create_resource +
+//     local_coursepilot_update_resource registriert und dem Coursepilot-Dienst
+//     hinzugefuegt.
 // 1.0.36 (2026072900) – Bugfix (#218): Moodle-5.0-Schema fuer upload_assignfile.
 //   - upload_assignfile.php: Die assign-Tabelle hatte nie Spalten
 //     introattachments/introattachmentsonsubmission; der defensive Lese-/

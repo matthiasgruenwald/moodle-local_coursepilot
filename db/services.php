@@ -116,6 +116,25 @@ $functions = [
     ],
 
     // ----------------------------------------------------------------
+    // Create / update a Resource (Datei) in a course section
+    // ----------------------------------------------------------------
+    'local_coursepilot_create_resource' => [
+        'classname'     => 'local_coursepilot\external\create_resource',
+        'description'   => 'Creates a File resource (mod_resource) in a given course section and stores a Base64 file as the main file.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    'local_coursepilot_update_resource' => [
+        'classname'     => 'local_coursepilot\external\update_resource',
+        'description'   => 'Updates the name and/or replaces the main file of an existing File resource (mod_resource).',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    // ----------------------------------------------------------------
     // Create an Assignment (Aufgabe) in a course section
     // ----------------------------------------------------------------
     'local_coursepilot_create_assign' => [
@@ -281,6 +300,8 @@ $services = [
             'local_coursepilot_create_url',
             'local_coursepilot_create_label',
             'local_coursepilot_create_page',
+            'local_coursepilot_create_resource',
+            'local_coursepilot_update_resource',
             'local_coursepilot_create_assign',
             'local_coursepilot_update_section',
             'local_coursepilot_ensure_section',
