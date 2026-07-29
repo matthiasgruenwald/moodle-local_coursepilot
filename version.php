@@ -9,12 +9,32 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072901;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072902;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.37';
+$plugin->release   = '1.0.38';
 
 // Changelog:
+// 1.0.38 (2026072902) – Neu (#222): Aktivitaets-MCP Verzeichnis (mod_folder).
+//   - create_folder.php: legt ein Verzeichnis (mod_folder) in einem Kurs-
+//     abschnitt an (display=0 separate Seite, showexpanded=1,
+//     showdownloadfolder=1). Nutzt add_moduleinfo() (delegiert an
+//     folder_add_instance); Moodle 5.0: folder_add_instance() liest
+//     $moduleinfo->files unconditional, daher wird files=0 gesetzt.
+//     Rueckgabe enthaelt cmid.
+//   - update_folder.php: aendert den Namen und/oder die Sichtbarkeit eines
+//     bestehenden Verzeichnisses (folder.name + course_modules.visible,
+//     timemodified wird aktualisiert).
+//   - upload_folder_file.php: laedt eine Base64-Datei in den Content-
+//     Dateibereich eines Verzeichnisses (component mod_folder, filearea
+//     content, itemid 0). Unterverzeichnisse werden ueber filepath angelegt
+//     (file_storage::create_directory inkl. Eltern), eine vorhandene Datei
+//     gleichen Namens im selben Verzeichnis wird ersetzt, folder.revision
+//     wird erhoeht. Antwort enthaelt fileid, filename, filepath und die
+//     Liste aller Dateien (voller Pfad).
+//   - db/services.php: local_coursepilot_create_folder,
+//     local_coursepilot_update_folder und local_coursepilot_upload_folder_file
+//     registriert und dem Coursepilot-Dienst hinzugefuegt.
 // 1.0.37 (2026072901) – Neu (#221): Aktivitaets-MCP Datei (mod_resource).
 //   - create_resource.php: legt eine Datei-Ressource (mod_resource) in einem
 //     Kursabschnitt an und speichert eine Base64-Datei als Hauptdatei im

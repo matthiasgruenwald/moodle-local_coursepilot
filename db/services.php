@@ -135,6 +135,33 @@ $functions = [
     ],
 
     // ----------------------------------------------------------------
+    // Create / update a Folder (Verzeichnis) and upload files into it
+    // ----------------------------------------------------------------
+    'local_coursepilot_create_folder' => [
+        'classname'     => 'local_coursepilot\external\create_folder',
+        'description'   => 'Creates a Folder (mod_folder) activity in a given course section.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    'local_coursepilot_update_folder' => [
+        'classname'     => 'local_coursepilot\external\update_folder',
+        'description'   => 'Updates the name and/or visibility of an existing Folder (mod_folder) activity.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    'local_coursepilot_upload_folder_file' => [
+        'classname'     => 'local_coursepilot\external\upload_folder_file',
+        'description'   => 'Uploads a file (Base64) into the content filearea of a Folder (mod_folder) activity, supporting subdirectories via filepath.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    // ----------------------------------------------------------------
     // Create an Assignment (Aufgabe) in a course section
     // ----------------------------------------------------------------
     'local_coursepilot_create_assign' => [
@@ -302,6 +329,9 @@ $services = [
             'local_coursepilot_create_page',
             'local_coursepilot_create_resource',
             'local_coursepilot_update_resource',
+            'local_coursepilot_create_folder',
+            'local_coursepilot_update_folder',
+            'local_coursepilot_upload_folder_file',
             'local_coursepilot_create_assign',
             'local_coursepilot_update_section',
             'local_coursepilot_ensure_section',
