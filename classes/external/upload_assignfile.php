@@ -12,6 +12,7 @@ use external_api;
 use external_function_parameters;
 use external_value;
 use external_single_structure;
+use external_multiple_structure;
 use context_module;
 
 /**
@@ -30,7 +31,7 @@ class upload_assignfile extends external_api {
     }
 
     public static function execute(int $cmid, string $filename, string $content, string $mimetype = 'application/octet-stream'): array {
-        global $DB, $USER;
+        global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid'     => $cmid,
@@ -91,15 +92,6 @@ class upload_assignfile extends external_api {
         $file = $fs->create_file_from_string($fileinfo, $filedata);
         $fileid = (int) $file->get_id();
 
-        // introattachments aktivieren falls noetig
-        $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
-        if (!isset($assign->introattachments) || (int) $assign->introattachments === 0) {
-            $DB->set_field('assign', 'introattachments', 10, ['id' => $cm->instance]);
-        }
-        if (!isset($assign->introattachmentsonsubmission) || $assign->introattachmentsonsubmission != 0) {
-            $DB->set_field('assign', 'introattachmentsonsubmission', 0, ['id' => $cm->instance]);
-        }
-
         // Cache neu aufbauen – Fehler hier abfangen da Upload bereits
         // erfolgreich war und rebuild_course_cache nur Optimierung ist
         try {
@@ -112,9 +104,15 @@ class upload_assignfile extends external_api {
             // Alle anderen Cache-Fehler ebenfalls ignorieren
         }
 
+        $introfiles = $fs->get_area_files($context->id, 'mod_assign', 'introattachment', 0, 'filename', false);
+        $files = array_values(array_map(static function ($introfile) {
+            return $introfile->get_filename();
+        }, $introfiles));
+
         return [
             'fileid'  => $fileid,
             'message' => 'Datei "' . $params['filename'] . '" erfolgreich hochgeladen (cmid: ' . $cm->id . ').',
+            'files'   => $files,
         ];
     }
 
@@ -122,6 +120,9 @@ class upload_assignfile extends external_api {
         return new external_single_structure([
             'fileid'  => new external_value(PARAM_INT,  'ID der hochgeladenen Datei in mdl_files'),
             'message' => new external_value(PARAM_TEXT, 'Success message'),
+            'files'   => new external_multiple_structure(
+                new external_value(PARAM_FILE, 'Dateiname im Intro-Attachment-Bereich der Aufgabe')
+            ),
         ]);
     }
 }

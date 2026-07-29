@@ -9,12 +9,22 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072702;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072900;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.35';
+$plugin->release   = '1.0.36';
 
 // Changelog:
+// 1.0.36 (2026072900) – Bugfix (#218): Moodle-5.0-Schema fuer upload_assignfile.
+//   - upload_assignfile.php: Die assign-Tabelle hatte nie Spalten
+//     introattachments/introattachmentsonsubmission; der defensive Lese-/
+//     Schreibblock darauf scheiterte in Moodle 5.0 immer. Intro-Anhaenge
+//     werden ausschliesslich ueber die Dateiablage verwaltet (mod_assign/
+//     introattachment, itemid 0) und automatisch gerendert. Block entfernt,
+//     $DB wird nicht mehr genutzt.
+//   - Antwort enthaelt neu 'files': Dateinamen im Intro-Anhang-Bereich nach
+//     dem Upload (End-to-End-Verifikation in test/integration/
+//     upload-assignfile.integration.test.js).
 // 1.0.35 (2026072702) – Neu (#189, Parent #146): Produktoberflaeche, Sprachen
 //   und Neuinstallation erklaert.
 //   - lang/de/local_coursepilot.php: vollstaendige, voruebergehende deutsche
