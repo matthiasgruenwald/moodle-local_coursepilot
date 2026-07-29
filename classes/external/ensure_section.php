@@ -24,6 +24,7 @@ class ensure_section extends external_api {
             'courseid'   => new external_value(PARAM_INT,  'Course ID'),
             'sectionnum' => new external_value(PARAM_INT,  'Section number (0-based)'),
             'name'       => new external_value(PARAM_TEXT, 'Section name', VALUE_DEFAULT, ''),
+            'summary'    => new external_value(PARAM_RAW,  'Section summary (HTML)', VALUE_DEFAULT, ''),
             'visible'    => new external_value(PARAM_INT,  'Visible (1), hidden (0), or unchanged (-1)', VALUE_DEFAULT, -1),
         ]);
     }
