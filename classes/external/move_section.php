@@ -55,10 +55,8 @@ class move_section extends external_api {
             'course' => $params['courseid'],
             'section' => $params['sectionnum'],
         ], 'id, section', MUST_EXIST);
-        $DB->get_record('course_sections', [
-            'course' => $params['courseid'],
-            'section' => $params['targetsectionnum'],
-        ], 'id', MUST_EXIST);
+        course_create_sections_if_missing($params['courseid'], $params['targetsectionnum']);
+        $course = $DB->get_record('course', ['id' => $params['courseid']], '*', MUST_EXIST);
 
         if ($params['sectionnum'] === $params['targetsectionnum']) {
             return [

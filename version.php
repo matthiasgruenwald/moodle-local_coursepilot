@@ -9,12 +9,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072904;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072905;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.40';
+$plugin->release   = '1.0.41';
 
 // Changelog:
+// 1.0.41 (2026072905) – Bugfix (#226): move_section Zielabschnitt auto-create.
+//   - move_section.php: Vor dem Verschieben wird course_create_sections_if_missing()
+//     aufgerufen, damit ein nicht-existierender Zielabschnitt automatisch angelegt
+//     wird statt mit invalidrecord zu scheitern.
 // 1.0.40 (2026072904) – Neu (#224): Aktivitaets-MCP Forum (mod_forum).
 //   - create_forum.php: legt ein Forum (mod_forum) mit waehlbarem Forumtyp
 //     (general, qanda, eachuser, single) in einem Kursabschnitt an. Nutzt
