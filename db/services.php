@@ -181,6 +181,25 @@ $functions = [
     ],
 
     // ----------------------------------------------------------------
+    // Create / update a Forum in a course section
+    // ----------------------------------------------------------------
+    'local_coursepilot_create_forum' => [
+        'classname'     => 'local_coursepilot\external\create_forum',
+        'description'   => 'Creates a Forum (mod_forum) activity with a selectable type (general, qanda, eachuser, single) in a given course section.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    'local_coursepilot_update_forum' => [
+        'classname'     => 'local_coursepilot\external\update_forum',
+        'description'   => 'Updates the name, description and/or type of an existing Forum (mod_forum) activity.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    // ----------------------------------------------------------------
     // Create an Assignment (Aufgabe) in a course section
     // ----------------------------------------------------------------
     'local_coursepilot_create_assign' => [
@@ -353,6 +372,8 @@ $services = [
             'local_coursepilot_upload_folder_file',
             'local_coursepilot_create_choice',
             'local_coursepilot_update_choice',
+            'local_coursepilot_create_forum',
+            'local_coursepilot_update_forum',
             'local_coursepilot_create_assign',
             'local_coursepilot_update_section',
             'local_coursepilot_ensure_section',

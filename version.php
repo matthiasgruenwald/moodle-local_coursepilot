@@ -9,12 +9,29 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072903;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072904;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.39';
+$plugin->release   = '1.0.40';
 
 // Changelog:
+// 1.0.40 (2026072904) – Neu (#224): Aktivitaets-MCP Forum (mod_forum).
+//   - create_forum.php: legt ein Forum (mod_forum) mit waehlbarem Forumtyp
+//     (general, qanda, eachuser, single) in einem Kursabschnitt an. Nutzt
+//     add_moduleinfo() (delegiert an forum_add_instance). Moodle-5.0-Schema:
+//     forum_grade_item_update() liest cmidnumber, assessed, scale und
+//     grade_forum unconditional, daher werden cmidnumber='' sowie alle
+//     bewertungs-/kalenderrelevanten Pflichtfelder explizit gesetzt (analog
+//     zum cmidnumber-Fix #2/#6). Rueckgabe enthaelt cmid, name und type.
+//   - update_forum.php: aendert Name, Beschreibung und/oder Forumtyp eines
+//     bestehenden Forums. Der volle Forum-Datensatz wird geladen und nur die
+//     uebergebenen Felder werden ueberschrieben, damit forum_update_instance()
+//     jedes gelesene Feld (assessed, scale, grade_forum, forcesubscribe, ...)
+//     vorfindet. cmidnumber und coursemodule kommen aus course_modules, da
+//     cmidnumber keine Spalte der forum-Tabelle ist.
+//   - db/services.php: local_coursepilot_create_forum und
+//     local_coursepilot_update_forum registriert und dem Coursepilot-Dienst
+//     hinzugefuegt.
 // 1.0.39 (2026072903) – Neu (#223): Aktivitaets-MCP Abstimmung (mod_choice).
 //   - create_choice.php: legt eine Abstimmung (mod_choice) mit 2-6 Optionen
 //     in einem Kursabschnitt an. Optionen werden als String-Array uebergeben
