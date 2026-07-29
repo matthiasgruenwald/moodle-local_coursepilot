@@ -9,12 +9,30 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072902;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026072903;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.38';
+$plugin->release   = '1.0.39';
 
 // Changelog:
+// 1.0.39 (2026072903) – Neu (#223): Aktivitaets-MCP Abstimmung (mod_choice).
+//   - create_choice.php: legt eine Abstimmung (mod_choice) mit 2-6 Optionen
+//     in einem Kursabschnitt an. Optionen werden als String-Array uebergeben
+//     und als $moduleinfo->option plus $moduleinfo->limit (0 = unbegrenzt)
+//     gesetzt; add_moduleinfo() delegiert an choice_add_instance(), das die
+//     Optionen als eigene Zeilen in choice_options anlegt. Moodle-5.0-Schema:
+//     mod_choice nutzt display (nicht optioncolumns) und allowmultiple; alle
+//     Pflichtfelder der choice-Tabelle werden explizit gesetzt. Rueckgabe
+//     enthaelt cmid, name und die gespeicherten Optionen.
+//   - update_choice.php: aendert Name, Beschreibung und/oder Optionen einer
+//     bestehenden Abstimmung. Die Optionspflege nutzt choice_update_instance()
+//     (denselben Pfad wie das Moodle-Editformular): vorhandene Optionen werden
+//     nach Position gematcht (IDs bleiben erhalten), neue Optionen angehaengt,
+//     leer gelassene entfernt. Ohne Optionen-Parameter bleiben die Optionen
+//     unveraendert.
+//   - db/services.php: local_coursepilot_create_choice und
+//     local_coursepilot_update_choice registriert und dem Coursepilot-Dienst
+//     hinzugefuegt.
 // 1.0.38 (2026072902) – Neu (#222): Aktivitaets-MCP Verzeichnis (mod_folder).
 //   - create_folder.php: legt ein Verzeichnis (mod_folder) in einem Kurs-
 //     abschnitt an (display=0 separate Seite, showexpanded=1,

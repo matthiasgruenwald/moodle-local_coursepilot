@@ -162,6 +162,25 @@ $functions = [
     ],
 
     // ----------------------------------------------------------------
+    // Create / update a Choice (Abstimmung) in a course section
+    // ----------------------------------------------------------------
+    'local_coursepilot_create_choice' => [
+        'classname'     => 'local_coursepilot\external\create_choice',
+        'description'   => 'Creates a Choice (mod_choice / Abstimmung) activity with 2-6 options in a given course section.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    'local_coursepilot_update_choice' => [
+        'classname'     => 'local_coursepilot\external\update_choice',
+        'description'   => 'Updates the name, description and/or options of an existing Choice (mod_choice / Abstimmung) activity.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/course:manageactivities',
+    ],
+
+    // ----------------------------------------------------------------
     // Create an Assignment (Aufgabe) in a course section
     // ----------------------------------------------------------------
     'local_coursepilot_create_assign' => [
@@ -332,6 +351,8 @@ $services = [
             'local_coursepilot_create_folder',
             'local_coursepilot_update_folder',
             'local_coursepilot_upload_folder_file',
+            'local_coursepilot_create_choice',
+            'local_coursepilot_update_choice',
             'local_coursepilot_create_assign',
             'local_coursepilot_update_section',
             'local_coursepilot_ensure_section',
