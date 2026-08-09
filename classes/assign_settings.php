@@ -30,12 +30,20 @@ class assign_settings {
         $moduleinfo->sendnotifications = $params['sendnotifications'];
         $moduleinfo->sendlatenotifications = $params['sendlatenotifications'];
         $moduleinfo->sendstudentnotifications = $params['sendstudentnotifications'];
-        $moduleinfo->assignsubmission_onlinetext_enabled = 1;
-        $moduleinfo->assignsubmission_file_enabled = $params['maxfiles'] > 0 ? 1 : 0;
-        $moduleinfo->assignsubmission_file_maxfiles = $params['maxfiles'];
-        $moduleinfo->assignsubmission_file_maxsizebytes = 0;
-        $moduleinfo->assignfeedback_comments_enabled = 1;
-        $moduleinfo->assignfeedback_editpdf_enabled = 0;
+        $moduleinfo->assignsubmission_onlinetext_enabled = $params['onlinetext_enabled'];
+        $moduleinfo->assignsubmission_onlinetext_wordlimit_enabled = $params['onlinetext_wordlimit_enabled'];
+        $moduleinfo->assignsubmission_onlinetext_wordlimit = $params['onlinetext_wordlimit'];
+        $moduleinfo->assignsubmission_file_enabled = $params['submission_file_enabled'] < 0 ? ($params['maxfiles'] > 0 ? 1 : 0) : $params['submission_file_enabled'];
+        $moduleinfo->assignsubmission_file_maxfiles = $params['submission_file_maxfiles'];
+        $moduleinfo->assignsubmission_file_maxsizebytes = $params['submission_file_maxsizebytes'];
+        $moduleinfo->assignsubmission_file_filetypes = $params['submission_file_filetypes'];
+        $moduleinfo->assignfeedback_comments_enabled = $params['feedback_comments_enabled'];
+        $moduleinfo->assignfeedback_editpdf_enabled = $params['feedback_editpdf_enabled'];
+        $moduleinfo->assignfeedback_file_enabled = $params['feedback_file_enabled'];
+        $moduleinfo->assignfeedback_file_maxfiles = $params['feedback_file_maxfiles'];
+        $moduleinfo->assignfeedback_file_maxsizebytes = $params['feedback_file_maxsizebytes'];
+        $moduleinfo->assignfeedback_file_filetypes = $params['feedback_file_filetypes'];
+        $moduleinfo->assignfeedback_offline_enabled = $params['feedback_offline_enabled'];
         $moduleinfo->grade = $params['mode'] === 'übung' ? 0 : 100;
         $moduleinfo->gradepass = 0;
         $moduleinfo->gradecat = $params['gradecat'];
@@ -110,7 +118,31 @@ class assign_settings {
         if (($params['gradingmethod'] ?? '') !== '') {
             $moduleinfo->advancedgradingmethod_submissions = $params['gradingmethod'] === 'none' ? '' : $params['gradingmethod'];
         }
+        foreach (self::plugin_fields() as $field) {
+            $value = $params[$field] ?? (str_ends_with($field, '_filetypes') ? '' : -1);
+            if ((is_string($value) && $value !== '') || (!is_string($value) && $value >= 0)) {
+                $moduleinfo->{self::moduleinfo_field($field)} = $value;
+            }
+        }
         return $moduleinfo;
+    }
+
+    /** Moodle's bundled configurable submission and feedback plugin fields. */
+    public static function plugin_fields(): array {
+        return [
+            'onlinetext_enabled', 'onlinetext_wordlimit_enabled', 'onlinetext_wordlimit',
+            'submission_file_enabled', 'submission_file_maxfiles', 'submission_file_maxsizebytes', 'submission_file_filetypes',
+            'feedback_comments_enabled', 'feedback_editpdf_enabled',
+            'feedback_file_enabled', 'feedback_file_maxfiles', 'feedback_file_maxsizebytes', 'feedback_file_filetypes',
+            'feedback_offline_enabled',
+        ];
+    }
+
+    private static function moduleinfo_field(string $field): string {
+        if (str_starts_with($field, 'onlinetext_')) {
+            return 'assignsubmission_' . $field;
+        }
+        return 'assign' . $field;
     }
 
     /** Validates core assignment dependencies and referenced Moodle objects. */
@@ -247,7 +279,17 @@ class assign_settings {
             'courseid' => $cm->course,
         ]);
         $gradingmethod = \grading_manager::instance(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
-        return [
+        $plugins = [];
+        foreach (self::plugin_fields() as $field) {
+            $value = (string) ($DB->get_field('assign_plugin_config', 'value', [
+                'assignment' => $assign->id,
+                'subtype' => str_starts_with($field, 'feedback_') ? 'assignfeedback' : 'assignsubmission',
+                'plugin' => str_starts_with($field, 'feedback_') ? substr($field, 9, strpos($field, '_', 9) - 9) : (str_starts_with($field, 'submission_file') ? 'file' : 'onlinetext'),
+                'name' => preg_replace('/^(onlinetext_|submission_file_|feedback_(comments_|editpdf_|file_|offline_))/', '', $field),
+            ]) ?: '');
+            $plugins[$field] = str_ends_with($field, '_filetypes') ? $value : (int) $value;
+        }
+        return array_merge([
             'name' => (string) $assign->name,
             'grade' => (int) $assign->grade,
             'gradepass' => (float) ($gradepass ?: 0),
@@ -270,6 +312,6 @@ class assign_settings {
             'markingallocation' => (int) $assign->markingallocation,
             'gradecat' => (int) $assign->gradecat,
             'gradingmethod' => (string) ($gradingmethod ?: 'none'),
-        ];
+        ], $plugins);
     }
 }

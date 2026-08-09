@@ -43,13 +43,27 @@ class update_assign extends external_api {
             'markingallocation' => new external_value(PARAM_INT, 'Bewertungszuordnung (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
             'gradecat' => new external_value(PARAM_INT, 'Vorhandene Bewertungskategorie (0 = Standard, -1 = nicht ändern)', VALUE_DEFAULT, -1),
             'gradingmethod' => new external_value(PARAM_ALPHA, 'Bewertungsmethode (leer = nicht ändern)', VALUE_DEFAULT, ''),
+            'onlinetext_enabled' => new external_value(PARAM_INT, 'Online-Text (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'onlinetext_wordlimit_enabled' => new external_value(PARAM_INT, 'Wortlimit (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'onlinetext_wordlimit' => new external_value(PARAM_INT, 'Maximale Wörter (-1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'submission_file_enabled' => new external_value(PARAM_INT, 'Dateiabgabe (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'submission_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateien (-1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'submission_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateigröße (-1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'submission_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Abgabe-Dateitypen (leer = nicht ändern)', VALUE_DEFAULT, ''),
+            'feedback_comments_enabled' => new external_value(PARAM_INT, 'Feedback-Kommentare (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'feedback_editpdf_enabled' => new external_value(PARAM_INT, 'PDF-Annotation (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'feedback_file_enabled' => new external_value(PARAM_INT, 'Feedback-Dateien (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'feedback_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Feedback-Dateien (-1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'feedback_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Feedback-Dateigröße (-1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'feedback_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Feedback-Dateitypen (leer = nicht ändern)', VALUE_DEFAULT, ''),
+            'feedback_offline_enabled' => new external_value(PARAM_INT, 'Offline-Bewertungsbogen (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
         ]);
     }
 
-    public static function execute(int $cmid, string $name = '', string $description = '', int $duedate = -1, int $visible = -1, int $grade = -1, float $gradepass = -1, int $submissiondrafts = -1, int $maxattempts = -2, string $attemptreopenmethod = '', int $allowsubmissionsfromdate = -1, int $cutoffdate = -1, int $gradingduedate = -1, int $requiresubmissionstatement = -1, int $teamsubmission = -1, int $requireallteammemberssubmit = -1, int $teamsubmissiongroupingid = -1, int $sendnotifications = -1, int $sendlatenotifications = -1, int $sendstudentnotifications = -1, int $blindmarking = -1, int $markingworkflow = -1, int $markingallocation = -1, int $gradecat = -1, string $gradingmethod = ''): array {
+    public static function execute(int $cmid, string $name = '', string $description = '', int $duedate = -1, int $visible = -1, int $grade = -1, float $gradepass = -1, int $submissiondrafts = -1, int $maxattempts = -2, string $attemptreopenmethod = '', int $allowsubmissionsfromdate = -1, int $cutoffdate = -1, int $gradingduedate = -1, int $requiresubmissionstatement = -1, int $teamsubmission = -1, int $requireallteammemberssubmit = -1, int $teamsubmissiongroupingid = -1, int $sendnotifications = -1, int $sendlatenotifications = -1, int $sendstudentnotifications = -1, int $blindmarking = -1, int $markingworkflow = -1, int $markingallocation = -1, int $gradecat = -1, string $gradingmethod = '', int $onlinetext_enabled = -1, int $onlinetext_wordlimit_enabled = -1, int $onlinetext_wordlimit = -1, int $submission_file_enabled = -1, int $submission_file_maxfiles = -1, int $submission_file_maxsizebytes = -1, string $submission_file_filetypes = '', int $feedback_comments_enabled = -1, int $feedback_editpdf_enabled = -1, int $feedback_file_enabled = -1, int $feedback_file_maxfiles = -1, int $feedback_file_maxsizebytes = -1, string $feedback_file_filetypes = '', int $feedback_offline_enabled = -1): array {
         global $DB;
 
-        $params = self::validate_parameters(self::execute_parameters(), compact('cmid', 'name', 'description', 'duedate', 'visible', 'grade', 'gradepass', 'submissiondrafts', 'maxattempts', 'attemptreopenmethod', 'allowsubmissionsfromdate', 'cutoffdate', 'gradingduedate', 'requiresubmissionstatement', 'teamsubmission', 'requireallteammemberssubmit', 'teamsubmissiongroupingid', 'sendnotifications', 'sendlatenotifications', 'sendstudentnotifications', 'blindmarking', 'markingworkflow', 'markingallocation', 'gradecat', 'gradingmethod'));
+        $params = self::validate_parameters(self::execute_parameters(), compact('cmid', 'name', 'description', 'duedate', 'visible', 'grade', 'gradepass', 'submissiondrafts', 'maxattempts', 'attemptreopenmethod', 'allowsubmissionsfromdate', 'cutoffdate', 'gradingduedate', 'requiresubmissionstatement', 'teamsubmission', 'requireallteammemberssubmit', 'teamsubmissiongroupingid', 'sendnotifications', 'sendlatenotifications', 'sendstudentnotifications', 'blindmarking', 'markingworkflow', 'markingallocation', 'gradecat', 'gradingmethod', 'onlinetext_enabled', 'onlinetext_wordlimit_enabled', 'onlinetext_wordlimit', 'submission_file_enabled', 'submission_file_maxfiles', 'submission_file_maxsizebytes', 'submission_file_filetypes', 'feedback_comments_enabled', 'feedback_editpdf_enabled', 'feedback_file_enabled', 'feedback_file_maxfiles', 'feedback_file_maxsizebytes', 'feedback_file_filetypes', 'feedback_offline_enabled'));
         $cm = get_coursemodule_from_id('assign', $params['cmid'], 0, false, MUST_EXIST);
         $context = context_module::instance($cm->id);
         self::validate_context($context);
@@ -98,6 +112,20 @@ class update_assign extends external_api {
             'markingallocation' => new external_value(PARAM_INT, 'Gespeicherte Bewertungszuordnung'),
             'gradecat' => new external_value(PARAM_INT, 'Gespeicherte Bewertungskategorie'),
             'gradingmethod' => new external_value(PARAM_ALPHA, 'Gespeicherte Bewertungsmethode'),
+            'onlinetext_enabled' => new external_value(PARAM_INT, 'Online-Text aktiviert'),
+            'onlinetext_wordlimit_enabled' => new external_value(PARAM_INT, 'Wortlimit aktiviert'),
+            'onlinetext_wordlimit' => new external_value(PARAM_INT, 'Wortlimit'),
+            'submission_file_enabled' => new external_value(PARAM_INT, 'Dateiabgabe aktiviert'),
+            'submission_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateien'),
+            'submission_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateigröße'),
+            'submission_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Abgabe-Dateitypen'),
+            'feedback_comments_enabled' => new external_value(PARAM_INT, 'Feedback-Kommentare aktiviert'),
+            'feedback_editpdf_enabled' => new external_value(PARAM_INT, 'PDF-Annotation aktiviert'),
+            'feedback_file_enabled' => new external_value(PARAM_INT, 'Feedback-Dateien aktiviert'),
+            'feedback_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Feedback-Dateien'),
+            'feedback_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Feedback-Dateigröße'),
+            'feedback_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Feedback-Dateitypen'),
+            'feedback_offline_enabled' => new external_value(PARAM_INT, 'Offline-Bewertungsbogen aktiviert'),
         ]);
     }
 }

@@ -9,12 +9,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026080901;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026080902;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.43';
+$plugin->release   = '1.0.44';
 
 // Changelog:
+// 1.0.44 (2026080902) – Aufgaben-Unterplugins (#262): Online-Text mit Wortlimit,
+//   Datei-Abgabe und alle Moodle-Bordmittel für Feedback sind einzeln steuerbar
+//   und im Katalog zurücklesbar; zusätzliche Aufgaben-Dateien bleiben erhalten.
 // 1.0.43 (2026080901) – Aufgaben-Core-Formularfelder (#261): Termine,
 //   Gruppenabgabe, Benachrichtigungen, anonyme Bewertung/Workflow sowie
 //   vorhandene Bewertungskategorien, Skalen und Methoden sind explizit per

@@ -57,6 +57,20 @@ class create_assign extends external_api {
             'markingallocation' => new external_value(PARAM_INT, 'Bewertungszuordnung (0 oder 1)', VALUE_DEFAULT, 0),
             'gradecat' => new external_value(PARAM_INT, 'Vorhandene Bewertungskategorie (0 = Standard)', VALUE_DEFAULT, 0),
             'gradingmethod' => new external_value(PARAM_ALPHA, 'Bewertungsmethode: none, rubric oder guide', VALUE_DEFAULT, 'none'),
+            'onlinetext_enabled' => new external_value(PARAM_INT, 'Online-Text erlauben (0 oder 1)', VALUE_DEFAULT, 1),
+            'onlinetext_wordlimit_enabled' => new external_value(PARAM_INT, 'Wortlimit für Online-Text (0 oder 1)', VALUE_DEFAULT, 0),
+            'onlinetext_wordlimit' => new external_value(PARAM_INT, 'Maximale Wörter für Online-Text (0 = Moodle-Standard)', VALUE_DEFAULT, 0),
+            'submission_file_enabled' => new external_value(PARAM_INT, 'Dateiabgabe (0 oder 1, -1 = aus maxfiles ableiten)', VALUE_DEFAULT, -1),
+            'submission_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Dateien je Abgabe', VALUE_DEFAULT, 1),
+            'submission_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Dateigröße in Bytes (0 = Moodle-Standard)', VALUE_DEFAULT, 0),
+            'submission_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Moodle-Dateitypen', VALUE_DEFAULT, ''),
+            'feedback_comments_enabled' => new external_value(PARAM_INT, 'Feedback-Kommentare (0 oder 1)', VALUE_DEFAULT, 1),
+            'feedback_editpdf_enabled' => new external_value(PARAM_INT, 'PDF-Annotation (0 oder 1)', VALUE_DEFAULT, 0),
+            'feedback_file_enabled' => new external_value(PARAM_INT, 'Feedback-Dateien (0 oder 1)', VALUE_DEFAULT, 0),
+            'feedback_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Feedback-Dateien', VALUE_DEFAULT, 1),
+            'feedback_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Größe von Feedback-Dateien in Bytes (0 = Moodle-Standard)', VALUE_DEFAULT, 0),
+            'feedback_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Feedback-Dateitypen', VALUE_DEFAULT, ''),
+            'feedback_offline_enabled' => new external_value(PARAM_INT, 'Offline-Bewertungsbogen (0 oder 1)', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -78,7 +92,11 @@ class create_assign extends external_api {
         int $requiresubmissionstatement = 0, int $teamsubmission = 0, int $requireallteammemberssubmit = 0,
         int $teamsubmissiongroupingid = 0, int $sendnotifications = 0, int $sendlatenotifications = 0,
         int $sendstudentnotifications = 1, int $blindmarking = 0, int $markingworkflow = 0,
-        int $markingallocation = 0, int $gradecat = 0, string $gradingmethod = 'none'
+        int $markingallocation = 0, int $gradecat = 0, string $gradingmethod = 'none',
+        int $onlinetext_enabled = 1, int $onlinetext_wordlimit_enabled = 0, int $onlinetext_wordlimit = 0,
+        int $submission_file_enabled = -1, int $submission_file_maxfiles = 1, int $submission_file_maxsizebytes = 0, string $submission_file_filetypes = '',
+        int $feedback_comments_enabled = 1, int $feedback_editpdf_enabled = 0, int $feedback_file_enabled = 0,
+        int $feedback_file_maxfiles = 1, int $feedback_file_maxsizebytes = 0, string $feedback_file_filetypes = '', int $feedback_offline_enabled = 0
     ): array {
         global $DB, $CFG;
 
@@ -105,6 +123,10 @@ class create_assign extends external_api {
             'sendstudentnotifications' => $sendstudentnotifications, 'blindmarking' => $blindmarking,
             'markingworkflow' => $markingworkflow, 'markingallocation' => $markingallocation,
             'gradecat' => $gradecat, 'gradingmethod' => $gradingmethod,
+            'onlinetext_enabled' => $onlinetext_enabled, 'onlinetext_wordlimit_enabled' => $onlinetext_wordlimit_enabled, 'onlinetext_wordlimit' => $onlinetext_wordlimit,
+            'submission_file_enabled' => $submission_file_enabled, 'submission_file_maxfiles' => $submission_file_maxfiles, 'submission_file_maxsizebytes' => $submission_file_maxsizebytes, 'submission_file_filetypes' => $submission_file_filetypes,
+            'feedback_comments_enabled' => $feedback_comments_enabled, 'feedback_editpdf_enabled' => $feedback_editpdf_enabled, 'feedback_file_enabled' => $feedback_file_enabled,
+            'feedback_file_maxfiles' => $feedback_file_maxfiles, 'feedback_file_maxsizebytes' => $feedback_file_maxsizebytes, 'feedback_file_filetypes' => $feedback_file_filetypes, 'feedback_offline_enabled' => $feedback_offline_enabled,
         ]);
 
         // Check permissions.
@@ -158,6 +180,20 @@ class create_assign extends external_api {
             'markingallocation' => new external_value(PARAM_INT, 'Gespeicherte Bewertungszuordnung'),
             'gradecat' => new external_value(PARAM_INT, 'Gespeicherte Bewertungskategorie'),
             'gradingmethod' => new external_value(PARAM_ALPHA, 'Gespeicherte Bewertungsmethode'),
+            'onlinetext_enabled' => new external_value(PARAM_INT, 'Online-Text aktiviert'),
+            'onlinetext_wordlimit_enabled' => new external_value(PARAM_INT, 'Wortlimit aktiviert'),
+            'onlinetext_wordlimit' => new external_value(PARAM_INT, 'Wortlimit'),
+            'submission_file_enabled' => new external_value(PARAM_INT, 'Dateiabgabe aktiviert'),
+            'submission_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateien'),
+            'submission_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Abgabe-Dateigröße'),
+            'submission_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Abgabe-Dateitypen'),
+            'feedback_comments_enabled' => new external_value(PARAM_INT, 'Feedback-Kommentare aktiviert'),
+            'feedback_editpdf_enabled' => new external_value(PARAM_INT, 'PDF-Annotation aktiviert'),
+            'feedback_file_enabled' => new external_value(PARAM_INT, 'Feedback-Dateien aktiviert'),
+            'feedback_file_maxfiles' => new external_value(PARAM_INT, 'Maximale Feedback-Dateien'),
+            'feedback_file_maxsizebytes' => new external_value(PARAM_INT, 'Maximale Feedback-Dateigröße'),
+            'feedback_file_filetypes' => new external_value(PARAM_RAW, 'Akzeptierte Feedback-Dateitypen'),
+            'feedback_offline_enabled' => new external_value(PARAM_INT, 'Offline-Bewertungsbogen aktiviert'),
         ]);
     }
 }

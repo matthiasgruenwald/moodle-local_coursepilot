@@ -205,7 +205,16 @@ class get_course_catalog extends external_api {
                 ]);
                 $details['name'] = (string) $assign->name;
                 $details['content'] = self::content_field((string) $assign->intro, $fullcontent);
-                $details['settings'] = self::settings([
+                $pluginsettings = [];
+                foreach ($DB->get_records('assign_plugin_config', ['assignment' => $assign->id]) as $config) {
+                    $pluginsettings[$config->subtype . '_' . $config->plugin . '_' . $config->name] = (string) $config->value;
+                }
+                $files = [];
+                $filecontext = context_module::instance($cmid);
+                foreach (get_file_storage()->get_area_files($filecontext->id, 'mod_assign', 'introattachment', 0, 'filepath, filename', false) as $file) {
+                    $files[] = ['filename' => $file->get_filename(), 'filepath' => $file->get_filepath(), 'filesize' => $file->get_filesize(), 'mimetype' => $file->get_mimetype()];
+                }
+                $details['settings'] = self::settings(array_merge([
                     'duedate' => (string) ((int) $assign->duedate),
                     'allowsubmissionsfromdate' => (string) ((int) $assign->allowsubmissionsfromdate),
                     'cutoffdate' => (string) ((int) $assign->cutoffdate),
@@ -228,7 +237,23 @@ class get_course_catalog extends external_api {
                     'markingallocation' => (string) ((int) $assign->markingallocation),
                     'gradecat' => (string) ((int) $assign->gradecat),
                     'gradingmethod' => (string) ($gradingmethod ?: 'none'),
-                ]);
+                    'additionalfiles' => json_encode($files),
+                ], [
+                    'onlinetext_enabled' => $pluginsettings['assignsubmission_onlinetext_enabled'] ?? '0',
+                    'onlinetext_wordlimit_enabled' => $pluginsettings['assignsubmission_onlinetext_wordlimit_enabled'] ?? '0',
+                    'onlinetext_wordlimit' => $pluginsettings['assignsubmission_onlinetext_wordlimit'] ?? '0',
+                    'submission_file_enabled' => $pluginsettings['assignsubmission_file_enabled'] ?? '0',
+                    'submission_file_maxfiles' => $pluginsettings['assignsubmission_file_maxfiles'] ?? '0',
+                    'submission_file_maxsizebytes' => $pluginsettings['assignsubmission_file_maxsizebytes'] ?? '0',
+                    'submission_file_filetypes' => $pluginsettings['assignsubmission_file_filetypes'] ?? '',
+                    'feedback_comments_enabled' => $pluginsettings['assignfeedback_comments_enabled'] ?? '0',
+                    'feedback_editpdf_enabled' => $pluginsettings['assignfeedback_editpdf_enabled'] ?? '0',
+                    'feedback_file_enabled' => $pluginsettings['assignfeedback_file_enabled'] ?? '0',
+                    'feedback_file_maxfiles' => $pluginsettings['assignfeedback_file_maxfiles'] ?? '0',
+                    'feedback_file_maxsizebytes' => $pluginsettings['assignfeedback_file_maxsizebytes'] ?? '0',
+                    'feedback_file_filetypes' => $pluginsettings['assignfeedback_file_filetypes'] ?? '',
+                    'feedback_offline_enabled' => $pluginsettings['assignfeedback_offline_enabled'] ?? '0',
+                ]));
             }
             return $details;
         }
