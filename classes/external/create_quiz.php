@@ -27,7 +27,7 @@ use invalid_parameter_exception;
  * Creates a mod_quiz activity. Drei Kurspilot-Modi geben komplette
  * Settings-Kombinationen vor:
  *
- *  - mini-check:       Kurzer Kompetenzcheck mit direkter Auswertung und
+ *  - mini-check:       Kurzer Kompetenzcheck mit direkter Auswertung ohne
  *                      Selbsteinschätzung.
  *  - lernstandscheck:  Lernstandscheck mit späterer Auswertung,
  *                      Selbsteinschätzung und Lernplanung.
@@ -71,7 +71,7 @@ class create_quiz extends external_api {
         switch ($mode) {
             case 'mini-check':
                 return [
-                    'preferredbehaviour' => 'immediatecbm',
+                    'preferredbehaviour' => 'immediatefeedback',
                     'attempts'           => 0,
                     'grademethod'        => QUIZ_GRADEHIGHEST,
                     'timelimit'          => 0,
@@ -238,7 +238,7 @@ class create_quiz extends external_api {
         $params = [];
 
         $stringdescriptions = [
-            'preferredbehaviour' => "Frageverhalten, z.B. 'deferredfeedback', 'immediatecbm', 'deferredcbm'. '' = Modus-Default verwenden.",
+            'preferredbehaviour' => "Frageverhalten, z.B. 'immediatefeedback', 'deferredfeedback', 'deferredcbm'. '' = Modus-Default verwenden.",
             'navmethod'          => "Navigationsmethode: 'free' oder 'sequential'. '' = Modus-Default verwenden.",
         ];
         foreach (self::OVERRIDABLE_STRING_FIELDS as $field) {
