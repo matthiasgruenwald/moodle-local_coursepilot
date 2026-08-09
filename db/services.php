@@ -390,6 +390,10 @@ $services = [
             'local_coursepilot_update_mc_question',
             'local_coursepilot_get_question',
             'local_coursepilot_add_questions_to_quiz',
+            // Moodle-Core-Kursseitenaktionen (Sichtbarkeit, Gruppenmodus):
+            // beim Plugin-Upgrade direkt dem bestehenden Coursepilot-Dienst
+            // zugeordnet; das vorhandene Token bleibt damit gültig.
+            'core_courseformat_update_course',
             // Core-Funktion (lesend): von Integrationstests genutzt, um die
             // tatsaechlich gespeicherten Quiz-Settings nach create_quiz zu
             // verifizieren (#11, quiz-modes.integration.test.js).

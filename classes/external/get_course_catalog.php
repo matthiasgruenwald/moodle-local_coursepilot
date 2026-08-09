@@ -114,7 +114,7 @@ class get_course_catalog extends external_api {
         }
 
         $rows = $DB->get_records_sql(
-            "SELECT cm.id AS cmid, cm.visible, cm.instance, cm.availability,
+            "SELECT cm.id AS cmid, cm.visible, cm.groupmode, cm.instance, cm.availability,
                     cm.completion, cm.completionview, cm.completionpassgrade,
                     m.name AS modname
                FROM {course_modules} cm
@@ -137,6 +137,7 @@ class get_course_catalog extends external_api {
                 'modname' => (string) $row->modname,
                 'name' => $details['name'],
                 'visible' => (int) $row->visible,
+                'groupmode' => (int) $row->groupmode,
                 'completion' => [
                     'completion' => (int) $row->completion,
                     'completionview' => (int) $row->completionview,
@@ -405,6 +406,7 @@ class get_course_catalog extends external_api {
                             'modname' => new external_value(PARAM_TEXT, 'Module type'),
                             'name' => new external_value(PARAM_TEXT, 'Module display name'),
                             'visible' => new external_value(PARAM_INT, 'Visible flag'),
+                            'groupmode' => new external_value(PARAM_INT, 'Group mode: 0 = none, 1 = separate, 2 = visible'),
                             'completion' => new external_single_structure([
                                 'completion' => new external_value(PARAM_INT, 'Completion mode'),
                                 'completionview' => new external_value(PARAM_INT, 'Require view completion flag'),

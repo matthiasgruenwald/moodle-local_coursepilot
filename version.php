@@ -9,12 +9,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026080902;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026080903;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.44';
+$plugin->release   = '1.0.45';
 
 // Changelog:
+// 1.0.45 (2026080903) – Core-Aktivitätseinstellungen (#263): Sichtbarkeit und
+//   Gruppenmodus laufen über core_courseformat_update_course im vorhandenen
+//   Coursepilot-Dienst und sind im Katalog frisch zurücklesbar.
 // 1.0.44 (2026080902) – Aufgaben-Unterplugins (#262): Online-Text mit Wortlimit,
 //   Datei-Abgabe und alle Moodle-Bordmittel für Feedback sind einzeln steuerbar
 //   und im Katalog zurücklesbar; zusätzliche Aufgaben-Dateien bleiben erhalten.
