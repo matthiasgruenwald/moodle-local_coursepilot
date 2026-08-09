@@ -20,6 +20,7 @@ use external_function_parameters;
 use external_value;
 use external_single_structure;
 use context_course;
+use local_coursepilot\assign_settings;
 
 /**
  * Creates a mod_assign activity inside a given section.
@@ -37,6 +38,10 @@ class create_assign extends external_api {
             'maxfiles'        => new external_value(PARAM_INT,  'Max number of uploaded files (0 = no file upload)', VALUE_DEFAULT, 1),
             'submissiondrafts' => new external_value(PARAM_INT, 'Require students to click Submit (1) or auto-submit (0)', VALUE_DEFAULT, 0),
             'visible'         => new external_value(PARAM_INT,  'Visible (1) or hidden (0)', VALUE_DEFAULT, 1),
+            'mode' => new external_value(PARAM_TEXT, 'Aufgaben-Preset: standard oder übung', VALUE_DEFAULT, 'standard'),
+            'grade' => new external_value(PARAM_INT, 'Maximale Bewertung (0 = unbewertet, -1 = Preset-Standard)', VALUE_DEFAULT, -1),
+            'maxattempts' => new external_value(PARAM_INT, 'Maximale Versuche (-1 = unbegrenzt, -2 = Preset-Standard)', VALUE_DEFAULT, -2),
+            'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Wiedereröffnungsmethode (leer = Preset-Standard)', VALUE_DEFAULT, ''),
         ]);
     }
 
@@ -49,7 +54,11 @@ class create_assign extends external_api {
         int    $allowsubmissionsfromdate = 0,
         int    $maxfiles = 1,
         int    $submissiondrafts = 0,
-        int    $visible = 1
+        int    $visible = 1,
+        string $mode = 'standard',
+        int    $grade = -1,
+        int    $maxattempts = -2,
+        string $attemptreopenmethod = ''
     ): array {
         global $DB, $CFG;
 
@@ -64,6 +73,10 @@ class create_assign extends external_api {
             'maxfiles'                 => $maxfiles,
             'submissiondrafts'         => $submissiondrafts,
             'visible'                  => $visible,
+            'mode'                     => $mode,
+            'grade'                    => $grade,
+            'maxattempts'              => $maxattempts,
+            'attemptreopenmethod'      => $attemptreopenmethod,
         ]);
 
         // Check permissions.
@@ -75,74 +88,30 @@ class create_assign extends external_api {
         // Get the course.
         $course = $DB->get_record('course', ['id' => $params['courseid']], '*', MUST_EXIST);
 
-        // Build module info.
-        $moduleinfo = new \stdClass();
-        $moduleinfo->modulename   = 'assign';
-        $moduleinfo->module       = $DB->get_field('modules', 'id', ['name' => 'assign'], MUST_EXIST);
-        $moduleinfo->course       = $params['courseid'];
-        $moduleinfo->section      = $params['sectionnum'];
-        $moduleinfo->name         = $params['name'];
-        $moduleinfo->visible      = $params['visible'];
-
-        // Intro / description.
-        $moduleinfo->intro        = $params['description'];
-        $moduleinfo->introformat  = FORMAT_HTML;
-
-        // Dates.
-        $moduleinfo->allowsubmissionsfromdate         = $params['allowsubmissionsfromdate'];
-        $moduleinfo->duedate                          = $params['duedate'];
-        $moduleinfo->cutoffdate                       = 0;
-        $moduleinfo->gradingduedate                   = 0;
-
-        // Submission settings.
-        $moduleinfo->submissiondrafts                 = $params['submissiondrafts'];
-        $moduleinfo->requiresubmissionstatement       = 0;
-        $moduleinfo->sendnotifications                = 0;
-        $moduleinfo->sendlatenotifications            = 0;
-        $moduleinfo->sendstudentnotifications         = 1;
-
-        // Submission plugins: file + online text.
-        $moduleinfo->assignsubmission_onlinetext_enabled = 1;
-        $moduleinfo->assignsubmission_file_enabled       = ($params['maxfiles'] > 0) ? 1 : 0;
-        $moduleinfo->assignsubmission_file_maxfiles      = $params['maxfiles'];
-        $moduleinfo->assignsubmission_file_maxsizebytes  = 0; // Use course default.
-
-        // Feedback plugins.
-        $moduleinfo->assignfeedback_comments_enabled  = 1;
-        $moduleinfo->assignfeedback_editpdf_enabled   = 0;
-
-        // Grading.
-        $moduleinfo->grade                            = 100;
-        $moduleinfo->gradepass                        = 0;
-        $moduleinfo->gradecat                         = 0;
-
-        // Team submissions off.
-        $moduleinfo->teamsubmission                   = 0;
-        $moduleinfo->requireallteammemberssubmit      = 0;
-        $moduleinfo->teamsubmissiongroupingid         = 0;
-        $moduleinfo->blindmarking                     = 0;
-        $moduleinfo->attemptreopenmethod              = 'none';
-        $moduleinfo->maxattempts                      = -1;
-        $moduleinfo->markingworkflow                  = 0;
-        $moduleinfo->markingallocation                = 0;
-
-        // edit_module_post_actions() reads cmidnumber while syncing the grade item.
-        // Moodle 5.0 throws "Undefined property: stdClass::$cmidnumber" without it.
-        $moduleinfo->cmidnumber                       = '';
+        if (!in_array($params['mode'], ['standard', 'übung'], true)) {
+            throw new \invalid_parameter_exception('Unzulässiges Aufgaben-Preset.');
+        }
+        $moduleinfo = assign_settings::create_moduleinfo($params);
 
         // Add the module to the course.
         $moduleinfo = add_moduleinfo($moduleinfo, $course);
 
-        return [
+        return array_merge([
             'cmid'    => (int) $moduleinfo->coursemodule,
             'message' => 'Assignment "' . $params['name'] . '" successfully created.',
-        ];
+        ], assign_settings::result((int) $moduleinfo->coursemodule));
     }
 
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'cmid'    => new external_value(PARAM_INT,  'Course module ID of the created assignment'),
             'message' => new external_value(PARAM_TEXT, 'Success message'),
+            'name' => new external_value(PARAM_TEXT, 'Gespeicherter Aufgabentitel'),
+            'grade' => new external_value(PARAM_INT, 'Gespeicherte maximale Bewertung'),
+            'submissiondrafts' => new external_value(PARAM_INT, 'Gespeicherte Einstellung für endgültige Abgabe'),
+            'maxattempts' => new external_value(PARAM_INT, 'Gespeicherte maximale Versuche'),
+            'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Gespeicherte Wiedereröffnungsmethode'),
+            'visible' => new external_value(PARAM_INT, 'Gespeicherte Sichtbarkeit'),
         ]);
     }
 }

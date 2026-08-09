@@ -9,12 +9,14 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026072905;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026080900;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.41';
+$plugin->release   = '1.0.42';
 
 // Changelog:
+// 1.0.42 (2026080900) – Aufgaben-Snapshot-Pfad (#259): Create und Update
+//   verwenden vollstaendige moduleinfo-Snapshots und den Moodle-Modul-Lifecycle.
 // 1.0.41 (2026072905) – Bugfix (#226): move_section Zielabschnitt auto-create.
 //   - move_section.php: Vor dem Verschieben wird course_create_sections_if_missing()
 //     aufgerufen, damit ein nicht-existierender Zielabschnitt automatisch angelegt
