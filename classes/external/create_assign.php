@@ -43,6 +43,20 @@ class create_assign extends external_api {
             'gradepass' => new external_value(PARAM_FLOAT, 'Bestehensgrenze in Punkten (-1 = Preset-Standard)', VALUE_DEFAULT, -1),
             'maxattempts' => new external_value(PARAM_INT, 'Maximale Versuche (-1 = unbegrenzt, -2 = Preset-Standard)', VALUE_DEFAULT, -2),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Wiedereröffnungsmethode (leer = Preset-Standard)', VALUE_DEFAULT, ''),
+            'cutoffdate' => new external_value(PARAM_INT, 'Letzter Abgabetermin (0 = keiner)', VALUE_DEFAULT, 0),
+            'gradingduedate' => new external_value(PARAM_INT, 'Bewertungsfälligkeit (0 = keine)', VALUE_DEFAULT, 0),
+            'requiresubmissionstatement' => new external_value(PARAM_INT, 'Eigenständigkeitserklärung (0 oder 1)', VALUE_DEFAULT, 0),
+            'teamsubmission' => new external_value(PARAM_INT, 'Gruppenabgabe (0 oder 1)', VALUE_DEFAULT, 0),
+            'requireallteammemberssubmit' => new external_value(PARAM_INT, 'Alle Gruppenmitglieder geben ab (0 oder 1)', VALUE_DEFAULT, 0),
+            'teamsubmissiongroupingid' => new external_value(PARAM_INT, 'Vorhandene Kurs-Gruppierung (0 = alle Gruppen)', VALUE_DEFAULT, 0),
+            'sendnotifications' => new external_value(PARAM_INT, 'Abgabebenachrichtigungen (0 oder 1)', VALUE_DEFAULT, 0),
+            'sendlatenotifications' => new external_value(PARAM_INT, 'Verspätungsbenachrichtigungen (0 oder 1)', VALUE_DEFAULT, 0),
+            'sendstudentnotifications' => new external_value(PARAM_INT, 'Bewertungsbenachrichtigungen (0 oder 1)', VALUE_DEFAULT, 1),
+            'blindmarking' => new external_value(PARAM_INT, 'Anonyme Bewertung (0 oder 1)', VALUE_DEFAULT, 0),
+            'markingworkflow' => new external_value(PARAM_INT, 'Bewertungsworkflow (0 oder 1)', VALUE_DEFAULT, 0),
+            'markingallocation' => new external_value(PARAM_INT, 'Bewertungszuordnung (0 oder 1)', VALUE_DEFAULT, 0),
+            'gradecat' => new external_value(PARAM_INT, 'Vorhandene Bewertungskategorie (0 = Standard)', VALUE_DEFAULT, 0),
+            'gradingmethod' => new external_value(PARAM_ALPHA, 'Bewertungsmethode: none, rubric oder guide', VALUE_DEFAULT, 'none'),
         ]);
     }
 
@@ -60,7 +74,11 @@ class create_assign extends external_api {
         int    $grade = -1,
         float  $gradepass = -1,
         int    $maxattempts = -2,
-        string $attemptreopenmethod = ''
+        string $attemptreopenmethod = '', int $cutoffdate = 0, int $gradingduedate = 0,
+        int $requiresubmissionstatement = 0, int $teamsubmission = 0, int $requireallteammemberssubmit = 0,
+        int $teamsubmissiongroupingid = 0, int $sendnotifications = 0, int $sendlatenotifications = 0,
+        int $sendstudentnotifications = 1, int $blindmarking = 0, int $markingworkflow = 0,
+        int $markingallocation = 0, int $gradecat = 0, string $gradingmethod = 'none'
     ): array {
         global $DB, $CFG;
 
@@ -80,6 +98,13 @@ class create_assign extends external_api {
             'gradepass'                => $gradepass,
             'maxattempts'              => $maxattempts,
             'attemptreopenmethod'      => $attemptreopenmethod,
+            'cutoffdate' => $cutoffdate, 'gradingduedate' => $gradingduedate,
+            'requiresubmissionstatement' => $requiresubmissionstatement, 'teamsubmission' => $teamsubmission,
+            'requireallteammemberssubmit' => $requireallteammemberssubmit, 'teamsubmissiongroupingid' => $teamsubmissiongroupingid,
+            'sendnotifications' => $sendnotifications, 'sendlatenotifications' => $sendlatenotifications,
+            'sendstudentnotifications' => $sendstudentnotifications, 'blindmarking' => $blindmarking,
+            'markingworkflow' => $markingworkflow, 'markingallocation' => $markingallocation,
+            'gradecat' => $gradecat, 'gradingmethod' => $gradingmethod,
         ]);
 
         // Check permissions.
@@ -96,6 +121,7 @@ class create_assign extends external_api {
         }
         $moduleinfo = assign_settings::create_moduleinfo($params);
         assign_settings::validate_attempt_settings($moduleinfo, $params);
+        assign_settings::validate_core_settings($moduleinfo, $params, $course->id);
 
         // Add the module to the course.
         $moduleinfo = add_moduleinfo($moduleinfo, $course);
@@ -117,6 +143,21 @@ class create_assign extends external_api {
             'maxattempts' => new external_value(PARAM_INT, 'Gespeicherte maximale Versuche'),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Gespeicherte Wiedereröffnungsmethode'),
             'visible' => new external_value(PARAM_INT, 'Gespeicherte Sichtbarkeit'),
+            'allowsubmissionsfromdate' => new external_value(PARAM_INT, 'Gespeicherter Abgabebeginn'),
+            'cutoffdate' => new external_value(PARAM_INT, 'Gespeicherter letzter Abgabetermin'),
+            'gradingduedate' => new external_value(PARAM_INT, 'Gespeicherte Bewertungsfälligkeit'),
+            'requiresubmissionstatement' => new external_value(PARAM_INT, 'Gespeicherte Eigenständigkeitserklärung'),
+            'teamsubmission' => new external_value(PARAM_INT, 'Gespeicherte Gruppenabgabe'),
+            'requireallteammemberssubmit' => new external_value(PARAM_INT, 'Gespeicherte Pflichtabgabe aller Gruppenmitglieder'),
+            'teamsubmissiongroupingid' => new external_value(PARAM_INT, 'Gespeicherte Gruppierung'),
+            'sendnotifications' => new external_value(PARAM_INT, 'Gespeicherte Abgabebenachrichtigungen'),
+            'sendlatenotifications' => new external_value(PARAM_INT, 'Gespeicherte Verspätungsbenachrichtigungen'),
+            'sendstudentnotifications' => new external_value(PARAM_INT, 'Gespeicherte Bewertungsbenachrichtigungen'),
+            'blindmarking' => new external_value(PARAM_INT, 'Gespeicherte anonyme Bewertung'),
+            'markingworkflow' => new external_value(PARAM_INT, 'Gespeicherter Bewertungsworkflow'),
+            'markingallocation' => new external_value(PARAM_INT, 'Gespeicherte Bewertungszuordnung'),
+            'gradecat' => new external_value(PARAM_INT, 'Gespeicherte Bewertungskategorie'),
+            'gradingmethod' => new external_value(PARAM_ALPHA, 'Gespeicherte Bewertungsmethode'),
         ]);
     }
 }

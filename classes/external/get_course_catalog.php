@@ -6,6 +6,7 @@ namespace local_coursepilot\external;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/externallib.php');
+require_once($CFG->dirroot . '/grade/grading/lib.php');
 
 use external_api;
 use external_function_parameters;
@@ -13,6 +14,7 @@ use external_value;
 use external_single_structure;
 use external_multiple_structure;
 use context_course;
+use context_module;
 
 /**
  * Returns a compact read-only Moodle catalog for Kurspilot planning.
@@ -193,8 +195,9 @@ class get_course_catalog extends external_api {
         }
 
         if ($modname === 'assign') {
-            $assign = $DB->get_record('assign', ['id' => $instanceid], 'name, intro, duedate, completionsubmit, grade, submissiondrafts, maxattempts, attemptreopenmethod', IGNORE_MISSING);
+            $assign = $DB->get_record('assign', ['id' => $instanceid], 'name, intro, allowsubmissionsfromdate, duedate, cutoffdate, gradingduedate, completionsubmit, grade, gradecat, submissiondrafts, requiresubmissionstatement, maxattempts, attemptreopenmethod, teamsubmission, requireallteammemberssubmit, teamsubmissiongroupingid, sendnotifications, sendlatenotifications, sendstudentnotifications, blindmarking, markingworkflow, markingallocation', IGNORE_MISSING);
             if ($assign) {
+                $gradingmethod = \grading_manager::instance(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
                 $gradepass = $DB->get_field('grade_items', 'gradepass', [
                     'itemtype' => 'mod',
                     'itemmodule' => 'assign',
@@ -204,12 +207,27 @@ class get_course_catalog extends external_api {
                 $details['content'] = self::content_field((string) $assign->intro, $fullcontent);
                 $details['settings'] = self::settings([
                     'duedate' => (string) ((int) $assign->duedate),
+                    'allowsubmissionsfromdate' => (string) ((int) $assign->allowsubmissionsfromdate),
+                    'cutoffdate' => (string) ((int) $assign->cutoffdate),
+                    'gradingduedate' => (string) ((int) $assign->gradingduedate),
                     'completionsubmit' => (string) ((int) $assign->completionsubmit),
                     'grade' => (string) ((int) $assign->grade),
                     'gradepass' => (string) ((float) ($gradepass ?: 0)),
                     'submissiondrafts' => (string) ((int) $assign->submissiondrafts),
                     'maxattempts' => (string) ((int) $assign->maxattempts),
                     'attemptreopenmethod' => (string) $assign->attemptreopenmethod,
+                    'requiresubmissionstatement' => (string) ((int) $assign->requiresubmissionstatement),
+                    'teamsubmission' => (string) ((int) $assign->teamsubmission),
+                    'requireallteammemberssubmit' => (string) ((int) $assign->requireallteammemberssubmit),
+                    'teamsubmissiongroupingid' => (string) ((int) $assign->teamsubmissiongroupingid),
+                    'sendnotifications' => (string) ((int) $assign->sendnotifications),
+                    'sendlatenotifications' => (string) ((int) $assign->sendlatenotifications),
+                    'sendstudentnotifications' => (string) ((int) $assign->sendstudentnotifications),
+                    'blindmarking' => (string) ((int) $assign->blindmarking),
+                    'markingworkflow' => (string) ((int) $assign->markingworkflow),
+                    'markingallocation' => (string) ((int) $assign->markingallocation),
+                    'gradecat' => (string) ((int) $assign->gradecat),
+                    'gradingmethod' => (string) ($gradingmethod ?: 'none'),
                 ]);
             }
             return $details;

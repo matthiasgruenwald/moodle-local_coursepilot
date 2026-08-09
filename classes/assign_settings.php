@@ -5,6 +5,8 @@ namespace local_coursepilot;
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot . '/grade/grading/lib.php');
+
 /** Builds the complete moduleinfo snapshot used for assignment changes. */
 class assign_settings {
     public static function create_moduleinfo(array $params): \stdClass {
@@ -21,13 +23,13 @@ class assign_settings {
         $moduleinfo->introformat = FORMAT_HTML;
         $moduleinfo->allowsubmissionsfromdate = $params['allowsubmissionsfromdate'];
         $moduleinfo->duedate = $params['duedate'];
-        $moduleinfo->cutoffdate = 0;
-        $moduleinfo->gradingduedate = 0;
+        $moduleinfo->cutoffdate = $params['cutoffdate'];
+        $moduleinfo->gradingduedate = $params['gradingduedate'];
         $moduleinfo->submissiondrafts = $params['mode'] === 'übung' ? 0 : 1;
-        $moduleinfo->requiresubmissionstatement = 0;
-        $moduleinfo->sendnotifications = 0;
-        $moduleinfo->sendlatenotifications = 0;
-        $moduleinfo->sendstudentnotifications = 1;
+        $moduleinfo->requiresubmissionstatement = $params['requiresubmissionstatement'];
+        $moduleinfo->sendnotifications = $params['sendnotifications'];
+        $moduleinfo->sendlatenotifications = $params['sendlatenotifications'];
+        $moduleinfo->sendstudentnotifications = $params['sendstudentnotifications'];
         $moduleinfo->assignsubmission_onlinetext_enabled = 1;
         $moduleinfo->assignsubmission_file_enabled = $params['maxfiles'] > 0 ? 1 : 0;
         $moduleinfo->assignsubmission_file_maxfiles = $params['maxfiles'];
@@ -36,15 +38,16 @@ class assign_settings {
         $moduleinfo->assignfeedback_editpdf_enabled = 0;
         $moduleinfo->grade = $params['mode'] === 'übung' ? 0 : 100;
         $moduleinfo->gradepass = 0;
-        $moduleinfo->gradecat = 0;
-        $moduleinfo->teamsubmission = 0;
-        $moduleinfo->requireallteammemberssubmit = 0;
-        $moduleinfo->teamsubmissiongroupingid = 0;
-        $moduleinfo->blindmarking = 0;
+        $moduleinfo->gradecat = $params['gradecat'];
+        $moduleinfo->teamsubmission = $params['teamsubmission'];
+        $moduleinfo->requireallteammemberssubmit = $params['requireallteammemberssubmit'];
+        $moduleinfo->teamsubmissiongroupingid = $params['teamsubmissiongroupingid'];
+        $moduleinfo->blindmarking = $params['blindmarking'];
         $moduleinfo->attemptreopenmethod = 'manual';
         $moduleinfo->maxattempts = -1;
-        $moduleinfo->markingworkflow = 0;
-        $moduleinfo->markingallocation = 0;
+        $moduleinfo->markingworkflow = $params['markingworkflow'];
+        $moduleinfo->markingallocation = $params['markingallocation'];
+        $moduleinfo->advancedgradingmethod_submissions = $params['gradingmethod'] === 'none' ? '' : $params['gradingmethod'];
         $moduleinfo->cmidnumber = '';
 
         return self::patch($moduleinfo, $params);
@@ -60,6 +63,9 @@ class assign_settings {
             $field = $config->subtype . '_' . $config->plugin . '_' . $config->name;
             $moduleinfo->{$field} = $config->value;
         }
+        $moduleinfo->advancedgradingmethod_submissions = \grading_manager::instance(
+            \context_module::instance($cm->id), 'mod_assign', 'submissions'
+        )->get_active_method();
         return $moduleinfo;
     }
 
@@ -78,7 +84,7 @@ class assign_settings {
         if (($params['visible'] ?? -1) >= 0) {
             $moduleinfo->visible = $params['visible'];
         }
-        if (($params['grade'] ?? -1) >= 0) {
+        if (($params['grade'] ?? -1) !== -1) {
             $moduleinfo->grade = $params['grade'];
         }
         if (($params['gradepass'] ?? -1) >= 0) {
@@ -93,7 +99,80 @@ class assign_settings {
         if (($params['attemptreopenmethod'] ?? '') !== '') {
             $moduleinfo->attemptreopenmethod = $params['attemptreopenmethod'];
         }
+        foreach (['allowsubmissionsfromdate', 'cutoffdate', 'gradingduedate', 'requiresubmissionstatement',
+            'teamsubmission', 'requireallteammemberssubmit', 'teamsubmissiongroupingid', 'sendnotifications',
+            'sendlatenotifications', 'sendstudentnotifications', 'blindmarking', 'markingworkflow',
+            'markingallocation', 'gradecat'] as $field) {
+            if (($params[$field] ?? -1) >= 0) {
+                $moduleinfo->{$field} = $params[$field];
+            }
+        }
+        if (($params['gradingmethod'] ?? '') !== '') {
+            $moduleinfo->advancedgradingmethod_submissions = $params['gradingmethod'] === 'none' ? '' : $params['gradingmethod'];
+        }
         return $moduleinfo;
+    }
+
+    /** Validates core assignment dependencies and referenced Moodle objects. */
+    public static function validate_core_settings(\stdClass $moduleinfo, array $params, int $courseid): void {
+        global $DB;
+
+        $from = (int) $moduleinfo->allowsubmissionsfromdate;
+        $due = (int) $moduleinfo->duedate;
+        $cutoff = (int) $moduleinfo->cutoffdate;
+        if ($from && $due && $from > $due || $due && $cutoff && $due > $cutoff) {
+            throw new \invalid_parameter_exception('Ungültige Terminfolge: Abgabebeginn, Abgabetermin und letzter Abgabetermin müssen zeitlich aufeinander folgen.');
+        }
+        foreach (['requiresubmissionstatement', 'teamsubmission', 'requireallteammemberssubmit', 'sendnotifications',
+            'sendlatenotifications', 'sendstudentnotifications', 'blindmarking', 'markingworkflow', 'markingallocation'] as $field) {
+            if (!in_array((int) $moduleinfo->{$field}, [0, 1], true)) {
+                throw new \invalid_parameter_exception('Die Einstellung ' . $field . ' muss 0 oder 1 sein.');
+            }
+        }
+        if (!empty($moduleinfo->requireallteammemberssubmit) && empty($moduleinfo->teamsubmission)) {
+            throw new \invalid_parameter_exception('Alle Gruppenmitglieder können nur bei aktivierter Gruppenabgabe zur Abgabe verpflichtet werden.');
+        }
+        if ((int) $moduleinfo->teamsubmissiongroupingid > 0) {
+            if (empty($moduleinfo->teamsubmission) || !$DB->record_exists('groupings', ['id' => $moduleinfo->teamsubmissiongroupingid, 'courseid' => $courseid])) {
+                throw new \invalid_parameter_exception('Gruppenabgabe braucht eine vorhandene Kurs-Gruppierung.');
+            }
+        }
+        if (!empty($moduleinfo->markingallocation) && empty($moduleinfo->markingworkflow)) {
+            throw new \invalid_parameter_exception('Bewertungszuordnung setzt den Bewertungsworkflow voraus.');
+        }
+        if (($params['gradecat'] ?? -1) > 0 && !$DB->record_exists('grade_categories', ['id' => $moduleinfo->gradecat, 'courseid' => $courseid])) {
+            throw new \invalid_parameter_exception('Die Bewertungskategorie gehört nicht zu diesem Kurs.');
+        }
+        if (($params['grade'] ?? -1) < -1 && !$DB->record_exists_select('scale', 'id = ? AND (courseid = 0 OR courseid = ?)', [-$moduleinfo->grade, $courseid])) {
+            throw new \invalid_parameter_exception('Die ausgewählte Skala ist nicht im Kurs oder systemweit vorhanden.');
+        }
+        $method = (string) ($moduleinfo->advancedgradingmethod_submissions ?? '');
+        if ($method !== '' && !array_key_exists($method, \grading_manager::available_methods())) {
+            throw new \invalid_parameter_exception('Die Bewertungsmethode ist in Moodle nicht verfügbar.');
+        }
+    }
+
+    /** Refuses settings Moodle freezes once learner work exists. */
+    public static function validate_frozen_core_changes(\stdClass $moduleinfo, array $params): void {
+        global $DB;
+
+        $frozen = ['teamsubmission', 'requireallteammemberssubmit', 'teamsubmissiongroupingid', 'blindmarking'];
+        $changesfrozen = false;
+        foreach ($frozen as $field) {
+            if (($params[$field] ?? -1) >= 0 && (int) $params[$field] !== (int) $moduleinfo->{$field}) {
+                $changesfrozen = true;
+            }
+        }
+        if (($params['gradingmethod'] ?? '') !== ''
+            && ($params['gradingmethod'] === 'none' ? '' : $params['gradingmethod']) !== ($moduleinfo->advancedgradingmethod_submissions ?? '')) {
+            $changesfrozen = true;
+        }
+        if (empty($moduleinfo->id) || !$changesfrozen) {
+            return;
+        }
+        if ($DB->record_exists('assign_submission', ['assignment' => $moduleinfo->id]) || $DB->record_exists('assign_grades', ['assignment' => $moduleinfo->id])) {
+            throw new \invalid_parameter_exception('Diese Einstellung ist eingefroren, weil bereits Abgaben oder Bewertungen vorhanden sind.');
+        }
     }
 
     /** Validates Moodle's dependent submission and attempt settings. */
@@ -167,6 +246,7 @@ class assign_settings {
             'iteminstance' => $assign->id,
             'courseid' => $cm->course,
         ]);
+        $gradingmethod = \grading_manager::instance(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
         return [
             'name' => (string) $assign->name,
             'grade' => (int) $assign->grade,
@@ -175,6 +255,21 @@ class assign_settings {
             'maxattempts' => (int) $assign->maxattempts,
             'attemptreopenmethod' => (string) $assign->attemptreopenmethod,
             'visible' => (int) $cm->visible,
+            'allowsubmissionsfromdate' => (int) $assign->allowsubmissionsfromdate,
+            'cutoffdate' => (int) $assign->cutoffdate,
+            'gradingduedate' => (int) $assign->gradingduedate,
+            'requiresubmissionstatement' => (int) $assign->requiresubmissionstatement,
+            'teamsubmission' => (int) $assign->teamsubmission,
+            'requireallteammemberssubmit' => (int) $assign->requireallteammemberssubmit,
+            'teamsubmissiongroupingid' => (int) $assign->teamsubmissiongroupingid,
+            'sendnotifications' => (int) $assign->sendnotifications,
+            'sendlatenotifications' => (int) $assign->sendlatenotifications,
+            'sendstudentnotifications' => (int) $assign->sendstudentnotifications,
+            'blindmarking' => (int) $assign->blindmarking,
+            'markingworkflow' => (int) $assign->markingworkflow,
+            'markingallocation' => (int) $assign->markingallocation,
+            'gradecat' => (int) $assign->gradecat,
+            'gradingmethod' => (string) ($gradingmethod ?: 'none'),
         ];
     }
 }

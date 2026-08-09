@@ -9,12 +9,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026080900;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026080901;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.42';
+$plugin->release   = '1.0.43';
 
 // Changelog:
+// 1.0.43 (2026080901) – Aufgaben-Core-Formularfelder (#261): Termine,
+//   Gruppenabgabe, Benachrichtigungen, anonyme Bewertung/Workflow sowie
+//   vorhandene Bewertungskategorien, Skalen und Methoden sind explizit per
+//   MCP steuerbar, werden zurückgelesen und vor dem Speichern validiert.
 // 1.0.42 (2026080900) – Aufgaben-Snapshot-Pfad (#259): Create und Update
 //   verwenden vollstaendige moduleinfo-Snapshots und den Moodle-Modul-Lifecycle.
 // 1.0.41 (2026072905) – Bugfix (#226): move_section Zielabschnitt auto-create.
