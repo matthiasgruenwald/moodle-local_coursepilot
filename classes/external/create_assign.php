@@ -36,10 +36,11 @@ class create_assign extends external_api {
             'duedate'         => new external_value(PARAM_INT,  'Due date as Unix timestamp (0 = no due date)', VALUE_DEFAULT, 0),
             'allowsubmissionsfromdate' => new external_value(PARAM_INT, 'Allow submissions from (Unix timestamp, 0 = always)', VALUE_DEFAULT, 0),
             'maxfiles'        => new external_value(PARAM_INT,  'Max number of uploaded files (0 = no file upload)', VALUE_DEFAULT, 1),
-            'submissiondrafts' => new external_value(PARAM_INT, 'Require students to click Submit (1) or auto-submit (0)', VALUE_DEFAULT, 0),
+            'submissiondrafts' => new external_value(PARAM_INT, 'Require students to click Submit (1) or auto-submit (0)', VALUE_DEFAULT, -1),
             'visible'         => new external_value(PARAM_INT,  'Visible (1) or hidden (0)', VALUE_DEFAULT, 1),
             'mode' => new external_value(PARAM_TEXT, 'Aufgaben-Preset: standard oder übung', VALUE_DEFAULT, 'standard'),
             'grade' => new external_value(PARAM_INT, 'Maximale Bewertung (0 = unbewertet, -1 = Preset-Standard)', VALUE_DEFAULT, -1),
+            'gradepass' => new external_value(PARAM_FLOAT, 'Bestehensgrenze in Punkten (-1 = Preset-Standard)', VALUE_DEFAULT, -1),
             'maxattempts' => new external_value(PARAM_INT, 'Maximale Versuche (-1 = unbegrenzt, -2 = Preset-Standard)', VALUE_DEFAULT, -2),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Wiedereröffnungsmethode (leer = Preset-Standard)', VALUE_DEFAULT, ''),
         ]);
@@ -53,10 +54,11 @@ class create_assign extends external_api {
         int    $duedate = 0,
         int    $allowsubmissionsfromdate = 0,
         int    $maxfiles = 1,
-        int    $submissiondrafts = 0,
+        int    $submissiondrafts = -1,
         int    $visible = 1,
         string $mode = 'standard',
         int    $grade = -1,
+        float  $gradepass = -1,
         int    $maxattempts = -2,
         string $attemptreopenmethod = ''
     ): array {
@@ -75,6 +77,7 @@ class create_assign extends external_api {
             'visible'                  => $visible,
             'mode'                     => $mode,
             'grade'                    => $grade,
+            'gradepass'                => $gradepass,
             'maxattempts'              => $maxattempts,
             'attemptreopenmethod'      => $attemptreopenmethod,
         ]);
@@ -92,6 +95,7 @@ class create_assign extends external_api {
             throw new \invalid_parameter_exception('Unzulässiges Aufgaben-Preset.');
         }
         $moduleinfo = assign_settings::create_moduleinfo($params);
+        assign_settings::validate_attempt_settings($moduleinfo, $params);
 
         // Add the module to the course.
         $moduleinfo = add_moduleinfo($moduleinfo, $course);
@@ -108,6 +112,7 @@ class create_assign extends external_api {
             'message' => new external_value(PARAM_TEXT, 'Success message'),
             'name' => new external_value(PARAM_TEXT, 'Gespeicherter Aufgabentitel'),
             'grade' => new external_value(PARAM_INT, 'Gespeicherte maximale Bewertung'),
+            'gradepass' => new external_value(PARAM_FLOAT, 'Gespeicherte Bestehensgrenze'),
             'submissiondrafts' => new external_value(PARAM_INT, 'Gespeicherte Einstellung für endgültige Abgabe'),
             'maxattempts' => new external_value(PARAM_INT, 'Gespeicherte maximale Versuche'),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Gespeicherte Wiedereröffnungsmethode'),

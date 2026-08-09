@@ -195,12 +195,18 @@ class get_course_catalog extends external_api {
         if ($modname === 'assign') {
             $assign = $DB->get_record('assign', ['id' => $instanceid], 'name, intro, duedate, completionsubmit, grade, submissiondrafts, maxattempts, attemptreopenmethod', IGNORE_MISSING);
             if ($assign) {
+                $gradepass = $DB->get_field('grade_items', 'gradepass', [
+                    'itemtype' => 'mod',
+                    'itemmodule' => 'assign',
+                    'iteminstance' => $assign->id,
+                ]);
                 $details['name'] = (string) $assign->name;
                 $details['content'] = self::content_field((string) $assign->intro, $fullcontent);
                 $details['settings'] = self::settings([
                     'duedate' => (string) ((int) $assign->duedate),
                     'completionsubmit' => (string) ((int) $assign->completionsubmit),
                     'grade' => (string) ((int) $assign->grade),
+                    'gradepass' => (string) ((float) ($gradepass ?: 0)),
                     'submissiondrafts' => (string) ((int) $assign->submissiondrafts),
                     'maxattempts' => (string) ((int) $assign->maxattempts),
                     'attemptreopenmethod' => (string) $assign->attemptreopenmethod,

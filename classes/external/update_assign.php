@@ -24,16 +24,17 @@ class update_assign extends external_api {
             'duedate' => new external_value(PARAM_INT, 'New due date (-1 = no change)', VALUE_DEFAULT, -1),
             'visible' => new external_value(PARAM_INT, '1 = visible, 0 = hidden, -1 = no change', VALUE_DEFAULT, -1),
             'grade' => new external_value(PARAM_INT, 'Maximale Bewertung (0 = unbewertet, -1 = nicht ändern)', VALUE_DEFAULT, -1),
+            'gradepass' => new external_value(PARAM_FLOAT, 'Bestehensgrenze in Punkten (-1 = nicht ändern)', VALUE_DEFAULT, -1),
             'submissiondrafts' => new external_value(PARAM_INT, 'Endgültige Abgabe nötig (0 oder 1, -1 = nicht ändern)', VALUE_DEFAULT, -1),
             'maxattempts' => new external_value(PARAM_INT, 'Maximale Versuche (-1 = unbegrenzt, -2 = nicht ändern)', VALUE_DEFAULT, -2),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Wiedereröffnungsmethode (leer = nicht ändern)', VALUE_DEFAULT, ''),
         ]);
     }
 
-    public static function execute(int $cmid, string $name = '', string $description = '', int $duedate = -1, int $visible = -1, int $grade = -1, int $submissiondrafts = -1, int $maxattempts = -2, string $attemptreopenmethod = ''): array {
+    public static function execute(int $cmid, string $name = '', string $description = '', int $duedate = -1, int $visible = -1, int $grade = -1, float $gradepass = -1, int $submissiondrafts = -1, int $maxattempts = -2, string $attemptreopenmethod = ''): array {
         global $DB;
 
-        $params = self::validate_parameters(self::execute_parameters(), compact('cmid', 'name', 'description', 'duedate', 'visible', 'grade', 'submissiondrafts', 'maxattempts', 'attemptreopenmethod'));
+        $params = self::validate_parameters(self::execute_parameters(), compact('cmid', 'name', 'description', 'duedate', 'visible', 'grade', 'gradepass', 'submissiondrafts', 'maxattempts', 'attemptreopenmethod'));
         $cm = get_coursemodule_from_id('assign', $params['cmid'], 0, false, MUST_EXIST);
         $context = context_module::instance($cm->id);
         self::validate_context($context);
@@ -41,7 +42,10 @@ class update_assign extends external_api {
         require_capability('moodle/course:manageactivities', $context);
 
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
-        $moduleinfo = assign_settings::patch(assign_settings::snapshot($cm, $course), $params);
+        $moduleinfo = assign_settings::snapshot($cm, $course);
+        assign_settings::validate_submissiondrafts_change($moduleinfo, $params);
+        $moduleinfo = assign_settings::patch($moduleinfo, $params);
+        assign_settings::validate_attempt_settings($moduleinfo, $params);
         update_moduleinfo($cm, $moduleinfo, $course);
         rebuild_course_cache($cm->course, true);
 
@@ -57,6 +61,7 @@ class update_assign extends external_api {
             'message' => new external_value(PARAM_TEXT, 'Success message'),
             'name' => new external_value(PARAM_TEXT, 'Gespeicherter Aufgabentitel'),
             'grade' => new external_value(PARAM_INT, 'Gespeicherte maximale Bewertung'),
+            'gradepass' => new external_value(PARAM_FLOAT, 'Gespeicherte Bestehensgrenze'),
             'submissiondrafts' => new external_value(PARAM_INT, 'Gespeicherte Einstellung für endgültige Abgabe'),
             'maxattempts' => new external_value(PARAM_INT, 'Gespeicherte maximale Versuche'),
             'attemptreopenmethod' => new external_value(PARAM_TEXT, 'Gespeicherte Wiedereröffnungsmethode'),

@@ -23,7 +23,7 @@ class assign_settings {
         $moduleinfo->duedate = $params['duedate'];
         $moduleinfo->cutoffdate = 0;
         $moduleinfo->gradingduedate = 0;
-        $moduleinfo->submissiondrafts = 0;
+        $moduleinfo->submissiondrafts = $params['mode'] === 'übung' ? 0 : 1;
         $moduleinfo->requiresubmissionstatement = 0;
         $moduleinfo->sendnotifications = 0;
         $moduleinfo->sendlatenotifications = 0;
@@ -41,7 +41,7 @@ class assign_settings {
         $moduleinfo->requireallteammemberssubmit = 0;
         $moduleinfo->teamsubmissiongroupingid = 0;
         $moduleinfo->blindmarking = 0;
-        $moduleinfo->attemptreopenmethod = 'none';
+        $moduleinfo->attemptreopenmethod = 'manual';
         $moduleinfo->maxattempts = -1;
         $moduleinfo->markingworkflow = 0;
         $moduleinfo->markingallocation = 0;
@@ -81,6 +81,9 @@ class assign_settings {
         if (($params['grade'] ?? -1) >= 0) {
             $moduleinfo->grade = $params['grade'];
         }
+        if (($params['gradepass'] ?? -1) >= 0) {
+            $moduleinfo->gradepass = $params['gradepass'];
+        }
         if (($params['submissiondrafts'] ?? -1) >= 0) {
             $moduleinfo->submissiondrafts = $params['submissiondrafts'];
         }
@@ -93,14 +96,81 @@ class assign_settings {
         return $moduleinfo;
     }
 
+    /** Validates Moodle's dependent submission and attempt settings. */
+    public static function validate_attempt_settings(\stdClass $moduleinfo, array $params): void {
+        $submissiondrafts = ($params['submissiondrafts'] ?? -1) >= 0
+            ? $params['submissiondrafts']
+            : (int) $moduleinfo->submissiondrafts;
+        $maxattempts = ($params['maxattempts'] ?? -2) >= -1
+            ? $params['maxattempts']
+            : (int) $moduleinfo->maxattempts;
+        $attemptreopenmethod = ($params['attemptreopenmethod'] ?? '') !== ''
+            ? $params['attemptreopenmethod']
+            : ($moduleinfo->attemptreopenmethod ?? '');
+
+        if (!in_array($submissiondrafts, [0, 1], true)) {
+            throw new \invalid_parameter_exception('Die endgültige Abgabe muss 0 oder 1 sein.');
+        }
+        if (($params['maxattempts'] ?? -2) !== -2 && ($maxattempts < -1 || $maxattempts === 0 || $maxattempts > 30)) {
+            throw new \invalid_parameter_exception('Die maximale Versuchszahl muss -1 (unbegrenzt) oder 1 bis 30 sein.');
+        }
+        if (($params['attemptreopenmethod'] ?? '') !== '' && !in_array($params['attemptreopenmethod'], ['manual', 'automatic', 'untilpass'], true)) {
+            throw new \invalid_parameter_exception('Die Wiedereröffnung muss manual, automatic oder untilpass sein.');
+        }
+        if (($params['gradepass'] ?? -1) >= 0
+            && ((int) $moduleinfo->grade <= 0 || (float) $params['gradepass'] > (float) $moduleinfo->grade)) {
+            throw new \invalid_parameter_exception('Die Bestehensgrenze braucht eine Bewertung und darf diese nicht überschreiten.');
+        }
+
+        $changesattemptflow = ($params['maxattempts'] ?? -2) >= -1
+            || ($params['attemptreopenmethod'] ?? '') !== '';
+        if ($changesattemptflow && $submissiondrafts !== 1) {
+            throw new \invalid_parameter_exception('Eine Wiedereröffnung setzt die endgültige Abgabe voraus.');
+        }
+        if ($changesattemptflow && $maxattempts !== -1 && $maxattempts < 2) {
+            throw new \invalid_parameter_exception('Eine Wiedereröffnung braucht mindestens zwei Versuche oder unbegrenzte Versuche.');
+        }
+        $checksuntilpass = $attemptreopenmethod === 'untilpass' && ($changesattemptflow
+            || ($params['grade'] ?? -1) >= 0 || ($params['gradepass'] ?? -1) >= 0);
+        if ($checksuntilpass
+            && ((int) $moduleinfo->grade <= 0 || (float) ($moduleinfo->gradepass ?? 0) <= 0)) {
+            throw new \invalid_parameter_exception('untilpass braucht eine Bewertung mit Bestehensgrenze.');
+        }
+        if ($checksuntilpass && !empty($moduleinfo->blindmarking)) {
+            throw new \invalid_parameter_exception('untilpass ist mit anonymer Bewertung nicht zulässig.');
+        }
+    }
+
+    /** Moodle freezes final-submission mode once learner data exists. */
+    public static function validate_submissiondrafts_change(\stdClass $moduleinfo, array $params): void {
+        global $DB;
+
+        if (($params['submissiondrafts'] ?? -1) < 0
+            || (int) $params['submissiondrafts'] === (int) $moduleinfo->submissiondrafts
+            || empty($moduleinfo->id)) {
+            return;
+        }
+        if ($DB->record_exists('assign_submission', ['assignment' => $moduleinfo->id])
+            || $DB->record_exists('assign_grades', ['assignment' => $moduleinfo->id])) {
+            throw new \invalid_parameter_exception('Die endgültige Abgabe ist eingefroren, weil bereits Abgaben oder Bewertungen vorhanden sind.');
+        }
+    }
+
     public static function result(int $cmid): array {
         global $DB;
 
         $cm = get_coursemodule_from_id('assign', $cmid, 0, false, MUST_EXIST);
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
+        $gradepass = $DB->get_field('grade_items', 'gradepass', [
+            'itemtype' => 'mod',
+            'itemmodule' => 'assign',
+            'iteminstance' => $assign->id,
+            'courseid' => $cm->course,
+        ]);
         return [
             'name' => (string) $assign->name,
             'grade' => (int) $assign->grade,
+            'gradepass' => (float) ($gradepass ?: 0),
             'submissiondrafts' => (int) $assign->submissiondrafts,
             'maxattempts' => (int) $assign->maxattempts,
             'attemptreopenmethod' => (string) $assign->attemptreopenmethod,
