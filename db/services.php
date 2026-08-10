@@ -331,7 +331,7 @@ $functions = [
     ],
 
     'local_coursepilot_move_question' => [
-        'classname'     => 'local_coursepilot\\external\\move_question',
+        'classname'     => 'local_coursepilot\external\move_question',
         'description'   => 'Moves a question-bank entry including every version to a target question category through Moodle bulk move handling.',
         'type'          => 'write',
         'ajax'          => false,
@@ -357,7 +357,7 @@ $functions = [
     ],
 
     'local_coursepilot_get_quiz_cleanup_plan' => [
-        'classname'     => 'local_coursepilot\\external\\get_quiz_cleanup_plan',
+        'classname'     => 'local_coursepilot\external\get_quiz_cleanup_plan',
         'description'   => 'Returns a non-destructive manual cleanup plan for obsolete quiz slots, including a direct quiz edit URL.',
         'type'          => 'read',
         'ajax'          => false,

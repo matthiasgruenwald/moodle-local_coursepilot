@@ -67,11 +67,19 @@ class assign_settings {
 
         // Moodle prepares the CM fields and introeditor draft required by update_moduleinfo().
         [, , , $moduleinfo] = get_moduleinfo_data($cm, $course);
+        $gradeitem = $DB->get_record('grade_items', [
+            'itemtype' => 'mod',
+            'itemmodule' => 'assign',
+            'iteminstance' => $moduleinfo->id,
+            'courseid' => $course->id,
+        ], 'gradepass, categoryid', IGNORE_MISSING);
+        $moduleinfo->gradepass = (float) ($gradeitem->gradepass ?? 0);
+        $moduleinfo->gradecat = (int) ($gradeitem->categoryid ?? 0);
         foreach ($DB->get_records('assign_plugin_config', ['assignment' => $moduleinfo->id]) as $config) {
-            $field = $config->subtype . '_' . $config->plugin . '_' . $config->name;
+            $field = self::plugin_config_field($config);
             $moduleinfo->{$field} = $config->value;
         }
-        $moduleinfo->advancedgradingmethod_submissions = \grading_manager::instance(
+        $moduleinfo->advancedgradingmethod_submissions = \get_grading_manager(
             \context_module::instance($cm->id), 'mod_assign', 'submissions'
         )->get_active_method();
         return $moduleinfo;
@@ -143,6 +151,26 @@ class assign_settings {
             return 'assignsubmission_' . $field;
         }
         return 'assign' . $field;
+    }
+
+    /** Maps Moodle's persisted plugin-config names to their module-form fields. */
+    public static function plugin_config_field(\stdClass $config): string {
+        $field = $config->subtype . '_' . $config->plugin . '_' . $config->name;
+        return [
+            'assignsubmission_onlinetext_wordlimitenabled' => 'assignsubmission_onlinetext_wordlimit_enabled',
+            'assignsubmission_file_maxfilesubmissions' => 'assignsubmission_file_maxfiles',
+            'assignsubmission_file_maxsubmissionsizebytes' => 'assignsubmission_file_maxsizebytes',
+            'assignsubmission_file_filetypeslist' => 'assignsubmission_file_filetypes',
+        ][$field] ?? $field;
+    }
+
+    private static function plugin_config_name(string $field): string {
+        return [
+            'onlinetext_wordlimit_enabled' => 'wordlimitenabled',
+            'submission_file_maxfiles' => 'maxfilesubmissions',
+            'submission_file_maxsizebytes' => 'maxsubmissionsizebytes',
+            'submission_file_filetypes' => 'filetypeslist',
+        ][$field] ?? preg_replace('/^(onlinetext_|submission_file_|feedback_(comments_|editpdf_|file_|offline_))/', '', $field);
     }
 
     /** Validates core assignment dependencies and referenced Moodle objects. */
@@ -272,27 +300,27 @@ class assign_settings {
 
         $cm = get_coursemodule_from_id('assign', $cmid, 0, false, MUST_EXIST);
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
-        $gradepass = $DB->get_field('grade_items', 'gradepass', [
+        $gradeitem = $DB->get_record('grade_items', [
             'itemtype' => 'mod',
             'itemmodule' => 'assign',
             'iteminstance' => $assign->id,
             'courseid' => $cm->course,
-        ]);
-        $gradingmethod = \grading_manager::instance(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
+        ], 'gradepass, categoryid', IGNORE_MISSING);
+        $gradingmethod = \get_grading_manager(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
         $plugins = [];
         foreach (self::plugin_fields() as $field) {
             $value = (string) ($DB->get_field('assign_plugin_config', 'value', [
                 'assignment' => $assign->id,
                 'subtype' => str_starts_with($field, 'feedback_') ? 'assignfeedback' : 'assignsubmission',
                 'plugin' => str_starts_with($field, 'feedback_') ? substr($field, 9, strpos($field, '_', 9) - 9) : (str_starts_with($field, 'submission_file') ? 'file' : 'onlinetext'),
-                'name' => preg_replace('/^(onlinetext_|submission_file_|feedback_(comments_|editpdf_|file_|offline_))/', '', $field),
+                'name' => self::plugin_config_name($field),
             ]) ?: '');
             $plugins[$field] = str_ends_with($field, '_filetypes') ? $value : (int) $value;
         }
         return array_merge([
             'name' => (string) $assign->name,
             'grade' => (int) $assign->grade,
-            'gradepass' => (float) ($gradepass ?: 0),
+            'gradepass' => (float) ($gradeitem->gradepass ?? 0),
             'submissiondrafts' => (int) $assign->submissiondrafts,
             'maxattempts' => (int) $assign->maxattempts,
             'attemptreopenmethod' => (string) $assign->attemptreopenmethod,
@@ -310,7 +338,7 @@ class assign_settings {
             'blindmarking' => (int) $assign->blindmarking,
             'markingworkflow' => (int) $assign->markingworkflow,
             'markingallocation' => (int) $assign->markingallocation,
-            'gradecat' => (int) $assign->gradecat,
+            'gradecat' => (int) ($gradeitem->categoryid ?? 0),
             'gradingmethod' => (string) ($gradingmethod ?: 'none'),
         ], $plugins);
     }

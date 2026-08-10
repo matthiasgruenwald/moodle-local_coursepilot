@@ -15,6 +15,7 @@ use external_single_structure;
 use external_multiple_structure;
 use context_course;
 use context_module;
+use local_coursepilot\assign_settings;
 
 /**
  * Returns a compact read-only Moodle catalog for Kurspilot planning.
@@ -196,19 +197,19 @@ class get_course_catalog extends external_api {
         }
 
         if ($modname === 'assign') {
-            $assign = $DB->get_record('assign', ['id' => $instanceid], 'name, intro, allowsubmissionsfromdate, duedate, cutoffdate, gradingduedate, completionsubmit, grade, gradecat, submissiondrafts, requiresubmissionstatement, maxattempts, attemptreopenmethod, teamsubmission, requireallteammemberssubmit, teamsubmissiongroupingid, sendnotifications, sendlatenotifications, sendstudentnotifications, blindmarking, markingworkflow, markingallocation', IGNORE_MISSING);
+            $assign = $DB->get_record('assign', ['id' => $instanceid], 'id, name, intro, allowsubmissionsfromdate, duedate, cutoffdate, gradingduedate, completionsubmit, grade, submissiondrafts, requiresubmissionstatement, maxattempts, attemptreopenmethod, teamsubmission, requireallteammemberssubmit, teamsubmissiongroupingid, sendnotifications, sendlatenotifications, sendstudentnotifications, blindmarking, markingworkflow, markingallocation', IGNORE_MISSING);
             if ($assign) {
-                $gradingmethod = \grading_manager::instance(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
-                $gradepass = $DB->get_field('grade_items', 'gradepass', [
+                $gradingmethod = \get_grading_manager(\context_module::instance($cmid), 'mod_assign', 'submissions')->get_active_method();
+                $gradeitem = $DB->get_record('grade_items', [
                     'itemtype' => 'mod',
                     'itemmodule' => 'assign',
                     'iteminstance' => $assign->id,
-                ]);
+                ], 'gradepass, categoryid', IGNORE_MISSING);
                 $details['name'] = (string) $assign->name;
                 $details['content'] = self::content_field((string) $assign->intro, $fullcontent);
                 $pluginsettings = [];
                 foreach ($DB->get_records('assign_plugin_config', ['assignment' => $assign->id]) as $config) {
-                    $pluginsettings[$config->subtype . '_' . $config->plugin . '_' . $config->name] = (string) $config->value;
+                    $pluginsettings[assign_settings::plugin_config_field($config)] = (string) $config->value;
                 }
                 $files = [];
                 $filecontext = context_module::instance($cmid);
@@ -222,7 +223,7 @@ class get_course_catalog extends external_api {
                     'gradingduedate' => (string) ((int) $assign->gradingduedate),
                     'completionsubmit' => (string) ((int) $assign->completionsubmit),
                     'grade' => (string) ((int) $assign->grade),
-                    'gradepass' => (string) ((float) ($gradepass ?: 0)),
+                    'gradepass' => (string) ((float) ($gradeitem->gradepass ?? 0)),
                     'submissiondrafts' => (string) ((int) $assign->submissiondrafts),
                     'maxattempts' => (string) ((int) $assign->maxattempts),
                     'attemptreopenmethod' => (string) $assign->attemptreopenmethod,
@@ -236,7 +237,7 @@ class get_course_catalog extends external_api {
                     'blindmarking' => (string) ((int) $assign->blindmarking),
                     'markingworkflow' => (string) ((int) $assign->markingworkflow),
                     'markingallocation' => (string) ((int) $assign->markingallocation),
-                    'gradecat' => (string) ((int) $assign->gradecat),
+                    'gradecat' => (string) ((int) ($gradeitem->categoryid ?? 0)),
                     'gradingmethod' => (string) ($gradingmethod ?: 'none'),
                     'additionalfiles' => json_encode($files),
                 ], [

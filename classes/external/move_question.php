@@ -56,7 +56,8 @@ class move_question extends external_api {
         \core_question\external\move_questions::execute(
             $targetcontext->id,
             $targetcategory->id,
-            implode(',', $questionids)
+            implode(',', $questionids),
+            '/question/bank/managecategories/category.php'
         );
 
         $entry = $DB->get_record('question_bank_entries', ['id' => $entry->id], '*', MUST_EXIST);
