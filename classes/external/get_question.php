@@ -108,6 +108,7 @@ class get_question extends external_api {
         return [
             'questionid'          => (int) $question->id,
             'questionbankentryid' => (int) $entryid,
+            'categoryid'          => (int) $DB->get_field('question_bank_entries', 'questioncategoryid', ['id' => $entryid], MUST_EXIST),
             'version'             => (int) $latest->version,
             'name'                => (string) $question->name,
             'questiontext'        => (string) $question->questiontext,
@@ -157,6 +158,7 @@ class get_question extends external_api {
         return new external_single_structure([
             'questionid'          => new external_value(PARAM_INT,   'ID der latest-version question-Zeile'),
             'questionbankentryid' => new external_value(PARAM_INT,   'ID des question_bank_entries (Frage-Identitaet)'),
+            'categoryid'          => new external_value(PARAM_INT,   'Aktuelle Fragenbank-Kategorie der Frage'),
             'version'             => new external_value(PARAM_INT,   'Aktuelle Versionsnummer'),
             'name'                => new external_value(PARAM_TEXT,  'Name der Frage'),
             'questiontext'        => new external_value(PARAM_RAW,   'Fragetext (HTML)'),

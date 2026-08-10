@@ -9,12 +9,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081000;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081001;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.46';
+$plugin->release   = '1.0.47';
 
 // Changelog:
+// 1.0.47 (2026081001) – Fragenumzug (#266): Verschiebt einen vollständigen
+//   question_bank_entries-Datensatz samt aller Versionen über Moodles
+//   qbank_bulkmove-Pfad und liest Identität, Zielkategorie und Versionen zurück.
 // 1.0.46 (2026081000) – Fragengewichtung (#265): Multiple-Choice akzeptiert
 //   strukturierte Antworten mit Feedback und Fractions, Mehrfachauswahl wird
 //   als single=0 gespeichert und vollständig zurückgelesen.

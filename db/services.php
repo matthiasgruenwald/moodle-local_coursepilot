@@ -330,6 +330,14 @@ $functions = [
         'capabilities'  => 'moodle/question:add',
     ],
 
+    'local_coursepilot_move_question' => [
+        'classname'     => 'local_coursepilot\\external\\move_question',
+        'description'   => 'Moves a question-bank entry including every version to a target question category through Moodle bulk move handling.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/question:add',
+    ],
+
     'local_coursepilot_get_question' => [
         'classname'     => 'local_coursepilot\external\get_question',
         'description'   => 'Returns the latest version of a question in a category, identified by name or questionid. Used to look up a question before editing.',
@@ -388,6 +396,7 @@ $services = [
             'local_coursepilot_get_question_categories',
             'local_coursepilot_create_mc_question',
             'local_coursepilot_update_mc_question',
+            'local_coursepilot_move_question',
             'local_coursepilot_get_question',
             'local_coursepilot_add_questions_to_quiz',
             // Moodle-Core-Kursseitenaktionen (Sichtbarkeit, Gruppenmodus):
