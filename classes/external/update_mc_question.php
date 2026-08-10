@@ -29,8 +29,8 @@ use external_multiple_structure;
  *   - Neue question_answers und qtype_multichoice_options-Zeilen werden zur
  *     neuen question.id erzeugt.
  *
- * V1-Regeln wie in create_mc_question (single=1, shuffleanswers=1, genau
- * eine richtige Antwort, kein Teilpunkte-Modell).
+ * Der strukturierte Antwortvertrag entspricht create_mc_question; der alte
+ * options[] + correctindex-Pfad bleibt als Einfachauswahl erhalten.
  */
 class update_mc_question extends external_api {
 
@@ -41,9 +41,16 @@ class update_mc_question extends external_api {
             'questiontext'    => new external_value(PARAM_RAW,   'Neuer Fragetext (HTML)'),
             'options'         => new external_multiple_structure(
                 new external_value(PARAM_RAW, 'Antwort-Option (HTML)'),
-                'Antwort-Optionen, mindestens 2'
+                'Alte Antwort-Optionen fuer correctindex-Kompatibilitaet', VALUE_DEFAULT, []
             ),
-            'correctindex'    => new external_value(PARAM_INT,   '0-basierter Index der richtigen Antwort in options[]'),
+            'correctindex'    => new external_value(PARAM_INT,   '0-basierter Index der richtigen Antwort in options[]', VALUE_DEFAULT, -1),
+            'selectionmode'   => new external_value(PARAM_ALPHA, 'single oder multiple', VALUE_DEFAULT, 'single'),
+            'answers'         => new external_multiple_structure(new external_single_structure([
+                'answer'   => new external_value(PARAM_RAW, 'Antworttext (HTML)'),
+                'correct'  => new external_value(PARAM_BOOL, 'Als richtig markiert'),
+                'feedback' => new external_value(PARAM_RAW, 'Antwortspezifisches Feedback (HTML)'),
+                'fraction' => new external_value(PARAM_FLOAT, 'Gewicht zwischen -1 und 1'),
+            ]), 'Strukturierte Antworten', VALUE_DEFAULT, []),
             'defaultmark'     => new external_value(PARAM_FLOAT, 'Standard-Punktzahl der Frage', VALUE_DEFAULT, 1.0),
             'generalfeedback' => new external_value(PARAM_RAW,   'Allgemeines Feedback (HTML, optional)', VALUE_DEFAULT, ''),
         ]);
@@ -53,8 +60,10 @@ class update_mc_question extends external_api {
         int    $questionid,
         string $name,
         string $questiontext,
-        array  $options,
-        int    $correctindex,
+        array  $options = [],
+        int    $correctindex = -1,
+        string $selectionmode = 'single',
+        array  $answers = [],
         float  $defaultmark = 1.0,
         string $generalfeedback = ''
     ): array {
@@ -66,19 +75,13 @@ class update_mc_question extends external_api {
             'questiontext'    => $questiontext,
             'options'         => $options,
             'correctindex'    => $correctindex,
+            'selectionmode'   => $selectionmode,
+            'answers'         => $answers,
             'defaultmark'     => $defaultmark,
             'generalfeedback' => $generalfeedback,
         ]);
 
-        $optioncount = count($params['options']);
-        if ($optioncount < 2) {
-            throw new \invalid_parameter_exception(
-                'Eine Multiple-Choice-Frage braucht mindestens 2 Antwort-Optionen.');
-        }
-        if ($params['correctindex'] < 0 || $params['correctindex'] >= $optioncount) {
-            throw new \invalid_parameter_exception(
-                'correctindex liegt ausserhalb der options[]-Range.');
-        }
+        $answers = self::normalise_answers($params);
 
         // Bestehende question + zugehoerige question_versions-Zeile finden.
         $oldquestion = $DB->get_record('question',
@@ -123,8 +126,8 @@ class update_mc_question extends external_api {
 
         // 3) Antworten + qtype_multichoice_options fuer die neue question.id.
         $answerids = self::insert_answers(
-            $newquestionid, $params['options'], $params['correctindex']);
-        self::insert_multichoice_options($newquestionid);
+            $newquestionid, $answers);
+        self::insert_multichoice_options($newquestionid, $params['selectionmode']);
 
         return [
             'questionid'          => $newquestionid,
@@ -132,6 +135,7 @@ class update_mc_question extends external_api {
             'version'             => $newversionnum,
             'previousquestionid'  => (int) $oldquestion->id,
             'answerids'           => array_map('intval', $answerids),
+            'warnings'            => self::warnings($answers, $params['selectionmode']),
             'message'             => 'MC-Frage "' . $params['name']
                 . '" erfolgreich als neue Version (' . $newversionnum . ') gespeichert.',
         ];
@@ -178,28 +182,70 @@ class update_mc_question extends external_api {
         $DB->insert_record('question_versions', $row);
     }
 
-    private static function insert_answers(int $questionid, array $options, int $correctindex): array {
+    private static function normalise_answers(array $params): array {
+        $answers = $params['answers'];
+        if (empty($answers)) {
+            foreach ($params['options'] as $index => $option) {
+                $answers[] = ['answer' => $option, 'correct' => $index === $params['correctindex'],
+                    'feedback' => '', 'fraction' => $index === $params['correctindex'] ? 1.0 : 0.0];
+            }
+        }
+        if (count($answers) < 2) {
+            throw new \invalid_parameter_exception('Eine Multiple-Choice-Frage braucht mindestens 2 Antworten.');
+        }
+        if (!in_array($params['selectionmode'], ['single', 'multiple'], true)) {
+            throw new \invalid_parameter_exception('selectionmode muss single oder multiple sein.');
+        }
+        foreach ($answers as $answer) {
+            if ($answer['fraction'] < -1 || $answer['fraction'] > 1) {
+                throw new \invalid_parameter_exception('fraction muss zwischen -1 und 1 liegen.');
+            }
+            if ((bool) $answer['correct'] !== ((float) $answer['fraction'] > 0)) {
+                throw new \invalid_parameter_exception('Korrektheit und fraction muessen uebereinstimmen.');
+            }
+        }
+        if ($params['selectionmode'] === 'single' && count(array_filter($answers,
+                static fn($answer) => !empty($answer['correct']))) !== 1) {
+            throw new \invalid_parameter_exception('Eine Einfachauswahl braucht genau eine richtige Antwort.');
+        }
+        return $answers;
+    }
+
+    private static function insert_answers(int $questionid, array $answers): array {
         global $DB;
         $answerids = [];
-        foreach ($options as $i => $opttext) {
+        foreach ($answers as $answerinput) {
             $a = new \stdClass();
             $a->question       = $questionid;
-            $a->answer         = (string) $opttext;
+            $a->answer         = (string) $answerinput['answer'];
             $a->answerformat   = FORMAT_HTML;
-            $a->fraction       = ($i === $correctindex) ? 1.0 : 0.0;
-            $a->feedback       = '';
+            $a->fraction       = (float) $answerinput['fraction'];
+            $a->feedback       = (string) $answerinput['feedback'];
             $a->feedbackformat = FORMAT_HTML;
             $answerids[] = (int) $DB->insert_record('question_answers', $a);
         }
         return $answerids;
     }
 
-    private static function insert_multichoice_options(int $questionid): void {
+    private static function warnings(array $answers, string $selectionmode): array {
+        $sum = array_sum(array_map(static fn($answer) => (float) $answer['fraction'], $answers));
+        $warnings = [];
+        if ($selectionmode === 'multiple' && $sum >= 1.0) {
+            $warnings[] = 'Wer alle Antworten auswählt, erhält volle Punktzahl; prüfe die Gewichte der Distraktoren.';
+        }
+        $correct = count(array_filter($answers, static fn($answer) => (float) $answer['fraction'] > 0));
+        if ($selectionmode === 'multiple' && $correct !== count($answers) - $correct) {
+            $warnings[] = 'Die Zahl richtiger und nicht richtiger Antworten ist unausgewogen; prüfe die Gewichte für eine faire Bewertung.';
+        }
+        return $warnings;
+    }
+
+    private static function insert_multichoice_options(int $questionid, string $selectionmode): void {
         global $DB;
         $mc = new \stdClass();
         $mc->questionid                     = $questionid;
         $mc->layout                         = 0;
-        $mc->single                         = 1;
+        $mc->single                         = $selectionmode === 'single' ? 1 : 0;
         $mc->shuffleanswers                 = 1;
         $mc->correctfeedback                = '';
         $mc->correctfeedbackformat          = FORMAT_HTML;
@@ -222,6 +268,9 @@ class update_mc_question extends external_api {
             'answerids'           => new external_multiple_structure(
                 new external_value(PARAM_INT, 'question_answers.id'),
                 'IDs der neu angelegten Antworten in Reihenfolge der options[]'
+            ),
+            'warnings'            => new external_multiple_structure(
+                new external_value(PARAM_TEXT, 'Hinweis zur Gewichtung'), 'Gewichtungswarnungen'
             ),
             'message'             => new external_value(PARAM_TEXT, 'Status-Nachricht'),
         ]);

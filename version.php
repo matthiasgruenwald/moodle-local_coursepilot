@@ -9,12 +9,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026080903;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081000;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.45';
+$plugin->release   = '1.0.46';
 
 // Changelog:
+// 1.0.46 (2026081000) – Fragengewichtung (#265): Multiple-Choice akzeptiert
+//   strukturierte Antworten mit Feedback und Fractions, Mehrfachauswahl wird
+//   als single=0 gespeichert und vollständig zurückgelesen.
 // 1.0.45 (2026080903) – Core-Aktivitätseinstellungen (#263): Sichtbarkeit und
 //   Gruppenmodus laufen über core_courseformat_update_course im vorhandenen
 //   Coursepilot-Dienst und sind im Katalog frisch zurücklesbar.

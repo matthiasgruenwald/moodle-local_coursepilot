@@ -94,12 +94,16 @@ class get_question extends external_api {
                 'id'       => (int) $a->id,
                 'answer'   => (string) $a->answer,
                 'fraction' => (float) $a->fraction,
+                'feedback' => (string) $a->feedback,
+                'correct'  => (float) $a->fraction > 0,
             ];
             if ((float) $a->fraction >= 1.0 && $correctindex === -1) {
                 $correctindex = $i;
             }
             $i++;
         }
+        $multichoice = $DB->get_record('qtype_multichoice_options', ['questionid' => $question->id]);
+        $selectionmode = $multichoice && empty($multichoice->single) ? 'multiple' : 'single';
 
         return [
             'questionid'          => (int) $question->id,
@@ -112,6 +116,7 @@ class get_question extends external_api {
             'defaultmark'         => (float)  $question->defaultmark,
             'answers'             => $answerlist,
             'correctindex'        => $correctindex,
+            'selectionmode'       => $selectionmode,
         ];
     }
 
@@ -162,11 +167,14 @@ class get_question extends external_api {
                 new external_single_structure([
                     'id'       => new external_value(PARAM_INT,   'question_answers.id'),
                     'answer'   => new external_value(PARAM_RAW,   'Antwort-Text (HTML)'),
-                    'fraction' => new external_value(PARAM_FLOAT, 'Bewertung (1.0=richtig, 0.0=falsch)'),
+                    'fraction' => new external_value(PARAM_FLOAT, 'Gewicht der Antwort'),
+                    'feedback' => new external_value(PARAM_RAW,   'Antwortspezifisches Feedback (HTML)'),
+                    'correct'  => new external_value(PARAM_BOOL,  'Antwort hat positives Gewicht'),
                 ]),
                 'Antwort-Optionen in Anlege-Reihenfolge'
             ),
             'correctindex'        => new external_value(PARAM_INT,   '0-basierter Index der richtigen Antwort in answers[] (-1 wenn keine erkannt)'),
+            'selectionmode'       => new external_value(PARAM_ALPHA, 'single oder multiple'),
         ]);
     }
 }
