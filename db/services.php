@@ -355,6 +355,13 @@ $functions = [
         'ajax'          => false,
         'capabilities'  => 'moodle/course:manageactivities',
     ],
+
+    'local_coursepilot_get_quiz_cleanup_plan' => [
+        'classname'     => 'local_coursepilot\\external\\get_quiz_cleanup_plan',
+        'description'   => 'Returns a non-destructive manual cleanup plan for obsolete quiz slots, including a direct quiz edit URL.',
+        'type'          => 'read',
+        'ajax'          => false,
+    ],
 ];
 
 $services = [
@@ -399,6 +406,7 @@ $services = [
             'local_coursepilot_move_question',
             'local_coursepilot_get_question',
             'local_coursepilot_add_questions_to_quiz',
+            'local_coursepilot_get_quiz_cleanup_plan',
             // Moodle-Core-Kursseitenaktionen (Sichtbarkeit, Gruppenmodus):
             // beim Plugin-Upgrade direkt dem bestehenden Coursepilot-Dienst
             // zugeordnet; das vorhandene Token bleibt damit gültig.

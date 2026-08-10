@@ -9,12 +9,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081001;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081002;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.47';
+$plugin->release   = '1.0.48';
 
 // Changelog:
+// 1.0.48 (2026081002) – Nicht-destruktive Quiz-Bereinigung (#267):
+//   liefert pro nicht mehr gewünschtem Slot eine genaue manuelle Anweisung
+//   samt Frage, Kategorie und direktem Quiz-Bearbeitungslink; kein Slot oder
+//   keine Frage wird durch Kurspilot gelöscht.
 // 1.0.47 (2026081001) – Fragenumzug (#266): Verschiebt einen vollständigen
 //   question_bank_entries-Datensatz samt aller Versionen über Moodles
 //   qbank_bulkmove-Pfad und liest Identität, Zielkategorie und Versionen zurück.
