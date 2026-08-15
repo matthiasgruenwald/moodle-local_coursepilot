@@ -8,6 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->libdir . '/questionlib.php');
 
+use core_question\versions;
 use external_api;
 use external_function_parameters;
 use external_value;
@@ -84,6 +85,8 @@ class create_mc_question extends external_api {
 
         $now = time();
 
+        $transaction = $DB->start_delegated_transaction();
+
         // 1) Neue question-Zeile.
         $questionid = self::insert_question_row(
             $params['categoryid'],
@@ -96,19 +99,22 @@ class create_mc_question extends external_api {
         );
 
         // 2) Neuer question_bank_entries-Eintrag (Identitaet der Frage ueber
-        //    alle Versionen) + initiale question_versions-Zeile (version=1).
+        //    alle Versionen) + initiale question_versions-Zeile via Core-API (MDL-86798).
         $entryid = self::insert_bank_entry($params['categoryid'], $USER->id);
-        self::insert_version_row($entryid, 1, $questionid);
+        $versionnum = versions::get_next_version($entryid);
+        self::insert_version_row($entryid, $versionnum, $questionid);
 
         // 3) Antworten + qtype_multichoice_options.
         $answerids = self::insert_answers(
             $questionid, $answers);
         self::insert_multichoice_options($questionid, $params['selectionmode']);
 
+        $transaction->allow_commit();
+
         return [
             'questionid'          => (int) $questionid,
             'questionbankentryid' => (int) $entryid,
-            'version'             => 1,
+            'version'             => $versionnum,
             'answerids'           => array_map('intval', $answerids),
             'warnings'            => self::warnings($answers, $params['selectionmode']),
             'message'             => 'MC-Frage "' . $params['name'] . '" erfolgreich angelegt.',

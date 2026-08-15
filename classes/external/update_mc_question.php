@@ -8,6 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->libdir . '/questionlib.php');
 
+use core_question\versions;
 use external_api;
 use external_function_parameters;
 use external_value;
@@ -102,6 +103,8 @@ class update_mc_question extends external_api {
 
         $now = time();
 
+        $transaction = $DB->start_delegated_transaction();
+
         // 1) NEUE question-Zeile (ADR-0001: alte bleibt unangetastet).
         // Die Kategorie liegt seit Moodle 5.0 nicht mehr auf question.category,
         // sondern auf question_bank_entries.questioncategoryid (= $entry).
@@ -115,19 +118,16 @@ class update_mc_question extends external_api {
             $USER->id
         );
 
-        // 2) NEUE question_versions-Zeile mit version = max(version)+1 zur
-        //    selben questionbankentryid.
-        $maxversion = (int) $DB->get_field_sql(
-            'SELECT MAX(version) FROM {question_versions} WHERE questionbankentryid = ?',
-            [$entryid]
-        );
-        $newversionnum = $maxversion + 1;
+        // 2) NEUE question_versions-Zeile via Core-API (MDL-86798: nextversion-Feld).
+        $newversionnum = versions::get_next_version($entryid);
         self::insert_version_row($entryid, $newversionnum, $newquestionid);
 
         // 3) Antworten + qtype_multichoice_options fuer die neue question.id.
         $answerids = self::insert_answers(
             $newquestionid, $answers);
         self::insert_multichoice_options($newquestionid, $params['selectionmode']);
+
+        $transaction->allow_commit();
 
         return [
             'questionid'          => $newquestionid,
@@ -263,7 +263,7 @@ class update_mc_question extends external_api {
         return new external_single_structure([
             'questionid'          => new external_value(PARAM_INT,  'ID der neu erzeugten question-Zeile (=latest version)'),
             'questionbankentryid' => new external_value(PARAM_INT,  'ID des question_bank_entries (unveraendert)'),
-            'version'             => new external_value(PARAM_INT,  'Neue Versionsnummer (max+1)'),
+            'version'             => new external_value(PARAM_INT,  'Neue Versionsnummer (via nextversion-Feld)'),
             'previousquestionid'  => new external_value(PARAM_INT,  'questionid der Vorgaengerversion (bleibt fuer existierende Attempts gueltig)'),
             'answerids'           => new external_multiple_structure(
                 new external_value(PARAM_INT, 'question_answers.id'),
