@@ -23,8 +23,8 @@ use external_multiple_structure;
  *   - Anhand der bestehenden questionid wird die zugehoerige
  *     questionbankentryid ueber question_versions ermittelt.
  *   - Eine NEUE question-Zeile mit den neuen Inhalten wird angelegt.
- *   - Eine NEUE question_versions-Zeile mit version = max(version)+1 wird
- *     an dieselbe questionbankentryid gehaengt.
+ *   - Eine NEUE question_versions-Zeile (Versionsnummer via core_question\versions::get_next_version)
+ *     wird an dieselbe questionbankentryid gehaengt.
  *   - Die alte question-/Versions-Zeile bleibt unangetastet, damit bestehende
  *     Quiz-Attempts gueltig bleiben.
  *   - Neue question_answers und qtype_multichoice_options-Zeilen werden zur
