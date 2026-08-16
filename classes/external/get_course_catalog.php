@@ -16,6 +16,7 @@ use external_multiple_structure;
 use context_course;
 use context_module;
 use local_coursepilot\assign_settings;
+use local_coursepilot\availability_privacy;
 
 /**
  * Returns a compact read-only Moodle catalog for Kurspilot planning.
@@ -96,7 +97,7 @@ class get_course_catalog extends external_api {
                 'name' => $section->name ?? '',
                 'summary' => self::content_field((string) ($section->summary ?? ''), $fullcontent),
                 'visible' => (int) $section->visible,
-                'availability' => (string) ($section->availability ?? ''),
+                'availability' => availability_privacy::sanitize((string) ($section->availability ?? '')),
                 'modules' => self::modules((int) $section->id, $modulefilter, $fullcontent),
             ];
         }
@@ -144,7 +145,7 @@ class get_course_catalog extends external_api {
                     'completionview' => (int) $row->completionview,
                     'completionpassgrade' => (int) $row->completionpassgrade,
                 ],
-                'availability' => (string) ($row->availability ?? ''),
+                'availability' => availability_privacy::sanitize((string) ($row->availability ?? '')),
                 'content' => $details['content'],
                 'settings' => $details['settings'],
                 'quizslots' => $details['quizslots'],

@@ -99,6 +99,8 @@ class set_restriction extends external_api {
         $op = ($params['operator'] === 'OR') ? '|' : '&';
         $showc_bool = (bool) $params['show_locked'];
 
+        self::guard_existing_availability($cm);
+
         // -------------------------------------------------------------
         // Spezial-Pfad: quiz_passed (Notenbedingung auf grade_item)
         // -------------------------------------------------------------
@@ -185,6 +187,34 @@ class set_restriction extends external_api {
             'message' => 'Voraussetzungen fuer cmid ' . $cm->id . ' gesetzt: '
                 . implode(', ', $params['require_cmids']),
         ];
+    }
+
+    /**
+     * Prüft, ob die vorhandene availability nur Bedingungen enthält, die
+     * dieses Tool selbst erzeugt haben könnte (completion oder grade, flach).
+     * Alles andere → moodle_exception, kein Schreiben.
+     */
+    private static function guard_existing_availability(object $cm): void {
+        global $DB;
+        $existing = $DB->get_field('course_modules', 'availability', ['id' => $cm->id]);
+        if (empty($existing)) {
+            return;
+        }
+        $data = json_decode($existing, true);
+        if ($data === null || !isset($data['c']) || !is_array($data['c'])) {
+            throw new moodle_exception('invalidparameter', 'local_coursepilot', '', null,
+                'Diese Aktivität hat Zugangsvoraussetzungen, die Kurspilot nicht verwalten kann '
+                . '(z. B. personenbezogen oder datumsabhängig). Bitte im Moodle-UI ändern.');
+        }
+        foreach ($data['c'] as $condition) {
+            $type = $condition['type'] ?? '';
+            // Nested operator node or unknown type → foreign condition.
+            if (isset($condition['c']) || !in_array($type, ['completion', 'grade'], true)) {
+                throw new moodle_exception('invalidparameter', 'local_coursepilot', '', null,
+                    'Diese Aktivität hat Zugangsvoraussetzungen, die Kurspilot nicht verwalten kann '
+                    . '(z. B. personenbezogen oder datumsabhängig). Bitte im Moodle-UI ändern.');
+            }
+        }
     }
 
     public static function execute_returns(): external_single_structure {
