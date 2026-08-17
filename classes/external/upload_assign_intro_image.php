@@ -13,6 +13,7 @@ use external_function_parameters;
 use external_value;
 use external_single_structure;
 use context_module;
+use local_coursepilot\fileupload_helper;
 
 /**
  * Laedt ein Bild in den intro-Dateibereich einer Aufgabe und bindet es
@@ -47,11 +48,7 @@ class upload_assign_intro_image extends external_api {
         require_capability('local/coursepilot:use', $context);
         require_capability('moodle/course:manageactivities', $context);
 
-        $filedata = base64_decode($params['content'], true);
-        if ($filedata === false) {
-            throw new \invalid_parameter_exception('Ungueltige Base64-Kodierung.');
-        }
-        $detectedmimetype = finfo_buffer(new \finfo(FILEINFO_MIME_TYPE), $filedata) ?: 'application/octet-stream';
+        [$filedata, $detectedmimetype] = fileupload_helper::decode_and_validate($params['content']);
         if (!str_starts_with($detectedmimetype, 'image/')) {
             throw new \invalid_parameter_exception(
                 'Hochgeladene Datei ist kein Bild (erkannt: ' . $detectedmimetype . '). Nur Bilddateien können eingebettet werden.'
@@ -59,37 +56,21 @@ class upload_assign_intro_image extends external_api {
         }
 
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
-        $fs = get_file_storage();
 
-        $existing_files = $fs->get_area_files(
+        fileupload_helper::delete_existing($context->id, 'mod_assign', 'intro', 0, '/', $params['filename']);
+
+        $file = fileupload_helper::create_file(
             $context->id,
             'mod_assign',
             'intro',
             0,
-            'filename',
-            false
+            '/',
+            $params['filename'],
+            $detectedmimetype,
+            $USER->id,
+            fullname($USER),
+            $filedata
         );
-        foreach ($existing_files as $existing) {
-            if ($existing->get_filename() === $params['filename']) {
-                $existing->delete();
-            }
-        }
-
-        $fileinfo = [
-            'contextid' => $context->id,
-            'component' => 'mod_assign',
-            'filearea'  => 'intro',
-            'itemid'    => 0,
-            'filepath'  => '/',
-            'filename'  => $params['filename'],
-            'mimetype'  => $detectedmimetype,
-            'userid'    => $USER->id,
-            'source'    => $params['filename'],
-            'author'    => fullname($USER),
-            'license'   => 'allrightsreserved',
-        ];
-
-        $file = $fs->create_file_from_string($fileinfo, $filedata);
         $fileid = (int) $file->get_id();
 
         $src = '@@PLUGINFILE@@/' . rawurlencode($params['filename']);

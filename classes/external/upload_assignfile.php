@@ -14,6 +14,7 @@ use external_value;
 use external_single_structure;
 use external_multiple_structure;
 use context_module;
+use local_coursepilot\fileupload_helper;
 
 /**
  * Laedt eine Datei (als Base64) in den "Zusaetzliche Dateien"-Bereich
@@ -48,48 +49,29 @@ class upload_assignfile extends external_api {
         require_capability('moodle/course:manageactivities', $context);
 
         // Base64 dekodieren
-        $filedata = base64_decode($params['content'], true);
-        if ($filedata === false) {
-            throw new \invalid_parameter_exception('Ungueltige Base64-Kodierung.');
-        }
-        $detectedmimetype = finfo_buffer(new \finfo(FILEINFO_MIME_TYPE), $filedata) ?: 'application/octet-stream';
+        [$filedata, $detectedmimetype] = fileupload_helper::decode_and_validate($params['content']);
 
         $fs = get_file_storage();
 
-        // Alle vorhandenen Dateien gleichen Namens im filearea loeschen
-        $existing_files = $fs->get_area_files(
-            $context->id,
-            'mod_assign',
-            'introattachment',
-            0,
-            'filename',
-            false
-        );
-        foreach ($existing_files as $existing) {
-            if ($existing->get_filename() === $params['filename']) {
-                $existing->delete();
-            }
-        }
+        // Vorhandene Datei gleichen Namens im filearea loeschen
+        fileupload_helper::delete_existing($context->id, 'mod_assign', 'introattachment', 0, '/', $params['filename']);
 
         // Kurze Pause damit DB-Transaktion sicher abgeschlossen ist
         usleep(100000); // 100ms
 
         // Neue Datei anlegen
-        $fileinfo = [
-            'contextid' => $context->id,
-            'component' => 'mod_assign',
-            'filearea'  => 'introattachment',
-            'itemid'    => 0,
-            'filepath'  => '/',
-            'filename'  => $params['filename'],
-            'mimetype'  => $detectedmimetype,
-            'userid'    => $USER->id,
-            'source'    => $params['filename'],
-            'author'    => fullname($USER),
-            'license'   => 'allrightsreserved',
-        ];
-
-        $file = $fs->create_file_from_string($fileinfo, $filedata);
+        $file = fileupload_helper::create_file(
+            $context->id,
+            'mod_assign',
+            'introattachment',
+            0,
+            '/',
+            $params['filename'],
+            $detectedmimetype,
+            $USER->id,
+            fullname($USER),
+            $filedata
+        );
         $fileid = (int) $file->get_id();
 
         // Cache neu aufbauen – Fehler hier abfangen da Upload bereits

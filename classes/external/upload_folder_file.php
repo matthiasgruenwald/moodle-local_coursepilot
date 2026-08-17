@@ -20,6 +20,7 @@ use external_value;
 use external_single_structure;
 use external_multiple_structure;
 use context_module;
+use local_coursepilot\fileupload_helper;
 
 /**
  * Laedt eine Datei (als Base64) in den Content-Dateibereich einer
@@ -58,35 +59,30 @@ class upload_folder_file extends external_api {
         require_capability('local/coursepilot:use', $context);
         require_capability('moodle/course:manageactivities', $context);
 
-        $filedata = base64_decode($params['content'], true);
-        if ($filedata === false) {
-            throw new \invalid_parameter_exception('Ungueltige Base64-Kodierung.');
-        }
-        $detectedmimetype = finfo_buffer(new \finfo(FILEINFO_MIME_TYPE), $filedata) ?: $params['mimetype'];
+        [$filedata, $detectedmimetype] = fileupload_helper::decode_and_validate(
+            $params['content'],
+            null,
+            $params['mimetype']
+        );
 
         $fs = get_file_storage();
 
         $fs->create_directory($context->id, 'mod_folder', 'content', 0, $filepath);
 
-        $existing = $fs->get_file($context->id, 'mod_folder', 'content', 0, $filepath, $params['filename']);
-        if ($existing) {
-            $existing->delete();
-        }
+        fileupload_helper::delete_existing($context->id, 'mod_folder', 'content', 0, $filepath, $params['filename']);
 
-        $filerecord = [
-            'contextid' => $context->id,
-            'component' => 'mod_folder',
-            'filearea'  => 'content',
-            'itemid'    => 0,
-            'filepath'  => $filepath,
-            'filename'  => $params['filename'],
-            'mimetype'  => $detectedmimetype,
-            'userid'    => $USER->id,
-            'source'    => $params['filename'],
-            'author'    => fullname($USER),
-            'license'   => 'allrightsreserved',
-        ];
-        $file = $fs->create_file_from_string($filerecord, $filedata);
+        $file = fileupload_helper::create_file(
+            $context->id,
+            'mod_folder',
+            'content',
+            0,
+            $filepath,
+            $params['filename'],
+            $detectedmimetype,
+            $USER->id,
+            fullname($USER),
+            $filedata
+        );
 
         $folder = $DB->get_record('folder', ['id' => $cm->instance], '*', MUST_EXIST);
         $folder->revision = (int) $folder->revision + 1;
