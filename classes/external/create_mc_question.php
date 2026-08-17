@@ -8,7 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->libdir . '/questionlib.php');
 
-use core_question\versions;
+use local_coursepilot\mc_question_version;
 use external_api;
 use external_function_parameters;
 use external_value;
@@ -20,8 +20,10 @@ use external_multiple_structure;
  * Kategorie an. Bestehende options[] + correctindex-Aufrufe bleiben
  * Einfachauswahl; answers[] kann Gewicht und Antwortfeedback ausdruecken.
  *
- * Erzeugt einen neuen question_bank_entries-Eintrag sowie die initiale
- * question_versions-Zeile (version = 1). Spaetere update_mc_question-Aufrufe
+ * Die eigentliche Versionserzeugung (neuer question_bank_entries-Eintrag,
+ * initiale question_versions-Zeile mit version=1, generierte idnumber)
+ * uebernimmt local_coursepilot\mc_question_version::create() ueber Moodles
+ * question_type::save_question(). Spaetere update_mc_question-Aufrufe
  * haengen neue Versionen an dieselbe questionbankentryid (ADR-0001).
  */
 class create_mc_question extends external_api {
@@ -59,7 +61,7 @@ class create_mc_question extends external_api {
         float  $defaultmark = 1.0,
         string $generalfeedback = ''
     ): array {
-        global $DB, $USER;
+        global $DB;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'categoryid'      => $categoryid,
@@ -83,92 +85,24 @@ class create_mc_question extends external_api {
 
         $answers = self::normalise_answers($params);
 
-        $now = time();
-
-        $transaction = $DB->start_delegated_transaction();
-
-        // 1) Neue question-Zeile.
-        $questionid = self::insert_question_row(
+        $result = mc_question_version::create(
             $params['categoryid'],
             $params['name'],
             $params['questiontext'],
             $params['generalfeedback'],
             $params['defaultmark'],
-            $now,
-            $USER->id
+            $params['selectionmode'],
+            $answers
         );
 
-        // 2) Neuer question_bank_entries-Eintrag (Identitaet der Frage ueber
-        //    alle Versionen) + initiale question_versions-Zeile via Core-API (MDL-86798).
-        $entryid = self::insert_bank_entry($params['categoryid'], $USER->id);
-        $versionnum = versions::get_next_version($entryid);
-        self::insert_version_row($entryid, $versionnum, $questionid);
-
-        // 3) Antworten + qtype_multichoice_options.
-        $answerids = self::insert_answers(
-            $questionid, $answers);
-        self::insert_multichoice_options($questionid, $params['selectionmode']);
-
-        $transaction->allow_commit();
-
         return [
-            'questionid'          => (int) $questionid,
-            'questionbankentryid' => (int) $entryid,
-            'version'             => $versionnum,
-            'answerids'           => array_map('intval', $answerids),
+            'questionid'          => $result->questionid,
+            'questionbankentryid' => $result->questionbankentryid,
+            'version'             => $result->version,
+            'answerids'           => $result->answerids,
             'warnings'            => self::warnings($answers, $params['selectionmode']),
             'message'             => 'MC-Frage "' . $params['name'] . '" erfolgreich angelegt.',
         ];
-    }
-
-    private static function insert_question_row(
-        int    $categoryid,
-        string $name,
-        string $questiontext,
-        string $generalfeedback,
-        float  $defaultmark,
-        int    $now,
-        int    $userid
-    ): int {
-        global $DB;
-        $question = new \stdClass();
-        $question->category              = $categoryid;
-        $question->parent                = 0;
-        $question->name                  = $name;
-        $question->questiontext          = $questiontext;
-        $question->questiontextformat    = FORMAT_HTML;
-        $question->generalfeedback       = $generalfeedback;
-        $question->generalfeedbackformat = FORMAT_HTML;
-        $question->defaultmark           = $defaultmark;
-        $question->penalty               = 0;
-        $question->qtype                 = 'multichoice';
-        $question->length                = 1;
-        $question->stamp                 = make_unique_id_code();
-        $question->timecreated           = $now;
-        $question->timemodified          = $now;
-        $question->createdby             = $userid;
-        $question->modifiedby            = $userid;
-        $question->idnumber              = null;
-        return (int) $DB->insert_record('question', $question);
-    }
-
-    private static function insert_bank_entry(int $categoryid, int $userid): int {
-        global $DB;
-        $entry = new \stdClass();
-        $entry->questioncategoryid = $categoryid;
-        $entry->idnumber           = null;
-        $entry->ownerid            = $userid;
-        return (int) $DB->insert_record('question_bank_entries', $entry);
-    }
-
-    private static function insert_version_row(int $entryid, int $version, int $questionid): void {
-        global $DB;
-        $row = new \stdClass();
-        $row->questionbankentryid = $entryid;
-        $row->version             = $version;
-        $row->questionid          = $questionid;
-        $row->status              = 'ready';
-        $DB->insert_record('question_versions', $row);
     }
 
     private static function normalise_answers(array $params): array {
@@ -197,23 +131,16 @@ class create_mc_question extends external_api {
                 static fn($answer) => !empty($answer['correct']))) !== 1) {
             throw new \invalid_parameter_exception('Eine Einfachauswahl braucht genau eine richtige Antwort.');
         }
-        return $answers;
-    }
-
-    private static function insert_answers(int $questionid, array $answers): array {
-        global $DB;
-        $answerids = [];
-        foreach ($answers as $answerinput) {
-            $answer = new \stdClass();
-            $answer->question       = $questionid;
-            $answer->answer         = (string) $answerinput['answer'];
-            $answer->answerformat   = FORMAT_HTML;
-            $answer->fraction       = (float) $answerinput['fraction'];
-            $answer->feedback       = (string) $answerinput['feedback'];
-            $answer->feedbackformat = FORMAT_HTML;
-            $answerids[] = (int) $DB->insert_record('question_answers', $answer);
+        // qtype_multichoice::save_question_options() verlangt zwingend, dass die
+        // positiven fractions in Summe genau 1 ergeben (sonst interner Moodle-
+        // Fehler statt sauberer Rueckmeldung) - vorab pruefen.
+        $positivesum = round(array_sum(array_map(
+            static fn($answer) => max(0.0, (float) $answer['fraction']), $answers)), 2);
+        if (abs($positivesum - 1.0) > 0.001) {
+            throw new \invalid_parameter_exception(
+                'Die positiven fraction-Werte muessen in Summe genau 1 ergeben (aktuell ' . $positivesum . ').');
         }
-        return $answerids;
+        return $answers;
     }
 
     private static function warnings(array $answers, string $selectionmode): array {
@@ -227,25 +154,6 @@ class create_mc_question extends external_api {
             $warnings[] = 'Die Zahl richtiger und nicht richtiger Antworten ist unausgewogen; prüfe die Gewichte für eine faire Bewertung.';
         }
         return $warnings;
-    }
-
-    private static function insert_multichoice_options(int $questionid, string $selectionmode): void {
-        global $DB;
-        $mc = new \stdClass();
-        $mc->questionid                     = $questionid;
-        $mc->layout                         = 0;
-        $mc->single                         = $selectionmode === 'single' ? 1 : 0;
-        $mc->shuffleanswers                 = 1;
-        $mc->correctfeedback                = '';
-        $mc->correctfeedbackformat          = FORMAT_HTML;
-        $mc->partiallycorrectfeedback       = '';
-        $mc->partiallycorrectfeedbackformat = FORMAT_HTML;
-        $mc->incorrectfeedback              = '';
-        $mc->incorrectfeedbackformat        = FORMAT_HTML;
-        $mc->answernumbering                = 'abc';
-        $mc->shownumcorrect                 = 0;
-        $mc->showstandardinstruction        = 0;
-        $DB->insert_record('qtype_multichoice_options', $mc);
     }
 
     public static function execute_returns(): external_single_structure {

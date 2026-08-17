@@ -105,16 +105,19 @@ class get_question extends external_api {
         $multichoice = $DB->get_record('qtype_multichoice_options', ['questionid' => $question->id]);
         $selectionmode = $multichoice && empty($multichoice->single) ? 'multiple' : 'single';
 
+        $bankentry = $DB->get_record('question_bank_entries', ['id' => $entryid], '*', MUST_EXIST);
+
         return [
             'questionid'          => (int) $question->id,
             'questionbankentryid' => (int) $entryid,
-            'categoryid'          => (int) $DB->get_field('question_bank_entries', 'questioncategoryid', ['id' => $entryid], MUST_EXIST),
+            'categoryid'          => (int) $bankentry->questioncategoryid,
             'version'             => (int) $latest->version,
             'name'                => (string) $question->name,
             'questiontext'        => (string) $question->questiontext,
             'generalfeedback'     => (string) $question->generalfeedback,
             'qtype'               => (string) $question->qtype,
             'defaultmark'         => (float)  $question->defaultmark,
+            'idnumber'            => (string) ($bankentry->idnumber ?? ''),
             'answers'             => $answerlist,
             'correctindex'        => $correctindex,
             'selectionmode'       => $selectionmode,
@@ -165,6 +168,7 @@ class get_question extends external_api {
             'generalfeedback'     => new external_value(PARAM_RAW,   'Allgemeines Feedback (HTML)'),
             'qtype'               => new external_value(PARAM_TEXT,  'Fragetyp (i.d.R. multichoice)'),
             'defaultmark'         => new external_value(PARAM_FLOAT, 'Standard-Punktzahl der Frage'),
+            'idnumber'            => new external_value(PARAM_TEXT,  'idnumber des question_bank_entries (leer, falls keine vergeben)'),
             'answers'             => new external_multiple_structure(
                 new external_single_structure([
                     'id'       => new external_value(PARAM_INT,   'question_answers.id'),

@@ -9,12 +9,27 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081002;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081003;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.48';
+$plugin->release   = '1.0.49';
 
 // Changelog:
+// 1.0.49 (2026081003) – MC-Frage-Versionierung ueber save_question() (#321):
+//   - Neue classes/mc_question_version.php kapselt die Versionserzeugung
+//     (neue question-Zeile + neue question_versions-Zeile an derselben
+//     questionbankentryid, neue Antworten/qtype_multichoice_options) ueber
+//     Moodles eigene question_type::save_question()-API statt manueller
+//     $DB->insert_record()-Ketten. create_mc_question.php und
+//     update_mc_question.php delegieren jetzt dorthin; kein dupliziertes
+//     Insert-Geruest mehr in beiden Klassen.
+//   - create_mc_question vergibt bei Erstanlage eine generierte idnumber
+//     (vorher hart auf null gesetzt); update_mc_question erhaelt die
+//     bestehende idnumber ueber alle Folgeversionen.
+//   - get_question liefert idnumber zusaetzlich im Read-back.
+//   - Vorbereitung fuer KP-006 (Bild-Copy-on-Version) und KP-011
+//     (XML-Frageimport, docs/specs/0014), die denselben Versionierungskern
+//     brauchen.
 // 1.0.48 (2026081002) – Nicht-destruktive Quiz-Bereinigung (#267):
 //   liefert pro nicht mehr gewünschtem Slot eine genaue manuelle Anweisung
 //   samt Frage, Kategorie und direktem Quiz-Bearbeitungslink; kein Slot oder
