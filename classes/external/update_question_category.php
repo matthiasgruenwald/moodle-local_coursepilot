@@ -12,6 +12,7 @@ require_once($CFG->dirroot . '/question/classes/local/bank/question_bank_helper.
 use context_course;
 use context_module;
 use core_question\local\bank\question_bank_helper;
+use local_coursepilot\question_category_defaults;
 use external_api;
 use external_function_parameters;
 use external_single_structure;
@@ -123,7 +124,7 @@ class update_question_category extends external_api {
         $update->name = $targetname;
         $update->parent = $targetparentid;
         if ($moved) {
-            $update->sortorder = self::next_sortorder($targetparentid);
+            $update->sortorder = self::next_sortorder();
         }
         $DB->update_record('question_categories', $update);
 
@@ -184,15 +185,8 @@ class update_question_category extends external_api {
         return $ids;
     }
 
-    private static function next_sortorder(int $parentid): int {
-        global $DB;
-
-        $maxsortorder = $DB->get_field_sql(
-            'SELECT MAX(sortorder) FROM {question_categories} WHERE parent = ?',
-            [$parentid]
-        );
-
-        return ((int) $maxsortorder) + 1;
+    private static function next_sortorder(): int {
+        return question_category_defaults::SORTORDER;
     }
 
     public static function execute_returns(): external_single_structure {

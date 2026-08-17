@@ -16,6 +16,7 @@ use external_value;
 use context_course;
 use context_module;
 use core_question\local\bank\question_bank_helper;
+use local_coursepilot\question_category_defaults;
 
 /**
  * Creates (or returns the existing) question bank category in a selected
@@ -93,11 +94,6 @@ class create_question_category extends external_api {
             ];
         }
 
-        $maxsortorder = $DB->get_field_sql(
-            'SELECT MAX(sortorder) FROM {question_categories} WHERE parent = ?',
-            [$parentid]
-        );
-
         $record = new \stdClass();
         $record->name        = $params['name'];
         $record->contextid   = $qbankcontext->id;
@@ -105,7 +101,7 @@ class create_question_category extends external_api {
         $record->infoformat  = FORMAT_HTML;
         $record->stamp       = make_unique_id_code();
         $record->parent      = $parentid;
-        $record->sortorder   = ((int) $maxsortorder) + 1;
+        $record->sortorder   = question_category_defaults::SORTORDER;
         $record->idnumber    = null;
 
         $newid = $DB->insert_record('question_categories', $record);
