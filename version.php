@@ -9,12 +9,36 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081806;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081807;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.52';
+$plugin->release   = '1.0.53';
 
 // Changelog:
+// 1.0.53 (2026081807) – Aktivitaet klonen, Intra-Kurs (#328, KP-010, Spec 0013):
+//   - Neues Tool moodle_clone_activity (lib/core-tools.js): wrappt den
+//     bereits registrierten Core-Webservice core_courseformat_update_course
+//     (Action cm_duplicate) fuer den Intra-Kurs-Fall - kein neues
+//     Plugin-Webservice fuer das Duplizieren selbst noetig.
+//   - db/services.php: core_course_get_course_module (Quelle -> Kurs/
+//     Abschnitt/Completion/Voraussetzungen auflösen) und
+//     core_update_inplace_editable (generischer Titel-Rename fuer
+//     Aktivitaetstypen ohne eigenes Update-Tool, itemtype 'activityname')
+//     als weitere Core-Funktionen dem Coursepilot-Dienst hinzugefuegt.
+//   - Neue cmid wird nicht aus dem cm_duplicate-JSON-Response gelesen (der
+//     laesst 'cm'-Updates aus, wenn die Aktivitaet im Moment des
+//     Duplizierens nicht sichtbar ist - z.B. bei versteckter Quelle),
+//     sondern per Modullisten-Diff (local_coursepilot_get_modules vor/nach
+//     dem Duplizieren) im Zielabschnitt bestimmt.
+//   - Sichtbarkeit wird nach dem Duplizieren immer aktiv gesetzt
+//     (visible=1 Default), Titel immer explizit (Moodle haengt beim
+//     Duplizieren "(Kopie)" an). Rename ueber local_coursepilot_update_assign
+//     bzw. local_coursepilot_update_quiz_settings fuer die jeweiligen Typen,
+//     sonst generisch ueber core_update_inplace_editable.
+//   - Response enthaelt Hinweise (notes[]), wenn Completion- oder
+//     Voraussetzungs-Einstellungen von der Quelle uebernommen wurden.
+//   - Kursuebergreifendes Klonen (KP-010 zweiter Pfad) ist bewusst nicht
+//     Teil dieses Tools - siehe Spec 0013.
 // 1.0.52 (2026081806) – Versionstreuer XML-Frageimport (#327, KP-011, ADR-0001-Nachtrag):
 //   - Neue classes/external/import_questions_xml.php +
 //     local_coursepilot_import_questions_xml: parst Moodle-XML ueber die

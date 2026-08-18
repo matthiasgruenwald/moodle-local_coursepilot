@@ -446,6 +446,13 @@ $services = [
             // tatsaechlich gespeicherten Quiz-Settings nach create_quiz zu
             // verifizieren (#11, quiz-modes.integration.test.js).
             'mod_quiz_get_quizzes_by_courses',
+            // Core-Funktionen fuer moodle_clone_activity (#328, Spec 0013
+            // KP-010): cmid -> Kurs/Abschnitt/Completion/Voraussetzungen
+            // lesen (get_course_module) bzw. Titel generisch setzen
+            // (update_inplace_editable, itemtype=activityname) fuer
+            // Aktivitaetstypen ohne eigenes Kurspilot-Update-Tool.
+            'core_course_get_course_module',
+            'core_update_inplace_editable',
         ],
         'restrictedusers' => 0,
         'enabled'         => 1,
