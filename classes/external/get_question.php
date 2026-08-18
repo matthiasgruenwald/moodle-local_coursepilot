@@ -104,6 +104,10 @@ class get_question extends external_api {
         }
         $multichoice = $DB->get_record('qtype_multichoice_options', ['questionid' => $question->id]);
         $selectionmode = $multichoice && empty($multichoice->single) ? 'multiple' : 'single';
+        // 'none' ist der von mc_question_version.php fest gesetzte Wert (Issue #324).
+        // Fallback nur fuer den (regulaer nicht erwarteten) Fall, dass zu einer
+        // multichoice-Frage kein qtype_multichoice_options-Datensatz existiert.
+        $answernumbering = $multichoice ? (string) $multichoice->answernumbering : 'none';
 
         $bankentry = $DB->get_record('question_bank_entries', ['id' => $entryid], '*', MUST_EXIST);
 
@@ -121,6 +125,7 @@ class get_question extends external_api {
             'answers'             => $answerlist,
             'correctindex'        => $correctindex,
             'selectionmode'       => $selectionmode,
+            'answernumbering'     => $answernumbering,
         ];
     }
 
@@ -181,6 +186,7 @@ class get_question extends external_api {
             ),
             'correctindex'        => new external_value(PARAM_INT,   '0-basierter Index der richtigen Antwort in answers[] (-1 wenn keine erkannt)'),
             'selectionmode'       => new external_value(PARAM_ALPHA, 'single oder multiple'),
+            'answernumbering'     => new external_value(PARAM_ALPHANUM, 'Nummerierungsstil der Antworten (Kurspilot setzt stets none, KP-007; "123" bei Altfragen vor #324 moeglich)'),
         ]);
     }
 }

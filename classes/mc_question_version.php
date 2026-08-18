@@ -152,7 +152,10 @@ class mc_question_version {
         // qtype_multichoice::save_question_options()-spezifische Felder.
         $form->single = $selectionmode === 'single' ? 1 : 0;
         $form->shuffleanswers = 1;
-        $form->answernumbering = 'abc';
+        // Fest auf 'none': Antworten werden gemischt (shuffleanswers), eine
+        // aufgedruckte Nummerierung (abc/123) waere didaktisch irrefuehrend
+        // und veraendert sich bei jedem Versuch (Issue #324, KP-007).
+        $form->answernumbering = 'none';
         $form->showstandardinstruction = 0;
         $form->shownumcorrect = 0;
         $form->correctfeedback = ['text' => '', 'format' => FORMAT_HTML, 'itemid' => 0];

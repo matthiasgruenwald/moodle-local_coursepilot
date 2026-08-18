@@ -9,12 +9,21 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081003;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081004;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.49';
+$plugin->release   = '1.0.50';
 
 // Changelog:
+// 1.0.50 (2026081004) – Antwortnummerierung fest auf none (#324, KP-007):
+//   - classes/mc_question_version.php: $form->answernumbering ist jetzt fest
+//     'none' statt 'abc' (galt fuer create_mc_question UND update_mc_question,
+//     da beide denselben build_form()-Kern nutzen). Antworten werden gemischt
+//     (shuffleanswers=1); eine aufgedruckte Nummerierung waere didaktisch
+//     irrefuehrend, da sie sich bei jedem Versuch aendern wuerde.
+//   - get_question.php: liefert answernumbering im Read-back (neues Feld,
+//     Fallback 'none' fuer qtype_multichoice_options-Datensaetze aus der Zeit
+//     vor #324).
 // 1.0.49 (2026081003) – MC-Frage-Versionierung ueber save_question() (#321):
 //   - Neue classes/mc_question_version.php kapselt die Versionserzeugung
 //     (neue question-Zeile + neue question_versions-Zeile an derselben
