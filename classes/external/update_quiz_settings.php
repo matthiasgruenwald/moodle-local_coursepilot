@@ -36,6 +36,8 @@ class update_quiz_settings extends external_api {
             'mode'      => new external_value(PARAM_ALPHANUMEXT, "Quizmodus: 'mini-check', 'lernstandscheck' oder 'abschlusstest'. Deprecated aliases: 'intensiv', 'lerncheck', 'bewertung'. Leer = kein Moduswechsel (reines Patch der explizit gesetzten Felder).", VALUE_DEFAULT, ''),
             'gradepass' => new external_value(PARAM_FLOAT, 'Bestehensgrenze in Prozent (0-100). -1 = nicht ändern.', VALUE_DEFAULT, -1),
             'timelimit' => new external_value(PARAM_INT, 'Zeitlimit in Sekunden (0 = unbegrenzt). -1 = nicht ändern.', VALUE_DEFAULT, -1),
+            'timeopen'  => new external_value(PARAM_INT, 'Öffnungszeitpunkt als Unix-Timestamp (0 = kein Limit). -1 = nicht ändern.', VALUE_DEFAULT, -1),
+            'timeclose' => new external_value(PARAM_INT, 'Schließzeitpunkt als Unix-Timestamp (0 = kein Limit). -1 = nicht ändern.', VALUE_DEFAULT, -1),
         ], create_quiz::overridable_field_params()));
     }
 
@@ -46,6 +48,8 @@ class update_quiz_settings extends external_api {
         string $mode = '',
         float $gradepass = -1,
         int $timelimit = -1,
+        int $timeopen = -1,
+        int $timeclose = -1,
         string $preferredbehaviour = '',
         string $navmethod = '',
         int    $questionsperpage = -1,
@@ -77,6 +81,8 @@ class update_quiz_settings extends external_api {
             'mode'      => $mode,
             'gradepass' => $gradepass,
             'timelimit' => $timelimit,
+            'timeopen'  => $timeopen,
+            'timeclose' => $timeclose,
             'preferredbehaviour' => $preferredbehaviour,
             'navmethod' => $navmethod,
             'questionsperpage' => $questionsperpage,

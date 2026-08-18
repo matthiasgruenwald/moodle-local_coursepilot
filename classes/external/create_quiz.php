@@ -428,6 +428,8 @@ class create_quiz extends external_api {
             'attempts'           => new external_value(PARAM_INT, 'Saved attempt limit'),
             'grademethod'        => new external_value(PARAM_INT, 'Saved grading method'),
             'gradepass'          => new external_value(PARAM_FLOAT, 'Saved grade pass threshold'),
+            'timeopen'           => new external_value(PARAM_INT, 'Saved open timestamp (0 = no limit)'),
+            'timeclose'          => new external_value(PARAM_INT, 'Saved close timestamp (0 = no limit)'),
             'decimalpoints'      => new external_value(PARAM_INT, 'Saved decimal points'),
             'completion'         => new external_value(PARAM_INT, 'Saved completion tracking mode'),
             'completionusegrade' => new external_value(PARAM_INT, 'Saved grade completion flag'),

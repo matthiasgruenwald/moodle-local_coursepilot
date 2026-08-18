@@ -41,11 +41,21 @@ class update_choice extends external_api {
                 VALUE_DEFAULT,
                 []
             ),
-            'visible' => new external_value(PARAM_INT,  '1 = visible, 0 = hidden, -1 = no change', VALUE_DEFAULT, -1),
+            'visible'   => new external_value(PARAM_INT,  '1 = visible, 0 = hidden, -1 = no change', VALUE_DEFAULT, -1),
+            'timeopen'  => new external_value(PARAM_INT,  'Opening timestamp (Unix, 0 = no limit). -1 = no change.', VALUE_DEFAULT, -1),
+            'timeclose' => new external_value(PARAM_INT,  'Closing timestamp (Unix, 0 = no limit). -1 = no change.', VALUE_DEFAULT, -1),
         ]);
     }
 
-    public static function execute(int $cmid, string $name = '', string $intro = '', array $options = [], int $visible = -1): array {
+    public static function execute(
+        int $cmid,
+        string $name = '',
+        string $intro = '',
+        array $options = [],
+        int $visible = -1,
+        int $timeopen = -1,
+        int $timeclose = -1
+    ): array {
         global $DB;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -54,6 +64,8 @@ class update_choice extends external_api {
             'intro'   => $intro,
             'options' => $options,
             'visible' => $visible,
+            'timeopen' => $timeopen,
+            'timeclose' => $timeclose,
         ]);
 
         $cm = get_coursemodule_from_id('choice', $params['cmid'], 0, false, MUST_EXIST);
@@ -69,6 +81,12 @@ class update_choice extends external_api {
         if ($params['intro'] !== '') {
             $choice->intro = $params['intro'];
             $choice->introformat = FORMAT_HTML;
+        }
+        if ($params['timeopen'] >= 0) {
+            $choice->timeopen = $params['timeopen'];
+        }
+        if ($params['timeclose'] >= 0) {
+            $choice->timeclose = $params['timeclose'];
         }
         $choice->instance = $choice->id;
         $choice->coursemodule = $cm->id;
@@ -118,11 +136,14 @@ class update_choice extends external_api {
         rebuild_course_cache($cm->course, true);
 
         $storedoptions = $DB->get_records('choice_options', ['choiceid' => $choice->id], 'id ASC', 'text');
+        $stored = $DB->get_record('choice', ['id' => $choice->id], 'timeopen, timeclose', MUST_EXIST);
 
         return [
             'cmid'    => $params['cmid'],
             'name'    => $choice->name,
             'options' => array_values(array_map(static fn($opt) => (string) $opt->text, $storedoptions)),
+            'timeopen' => (int) $stored->timeopen,
+            'timeclose' => (int) $stored->timeclose,
             'message' => 'Choice updated successfully.',
         ];
     }
@@ -135,6 +156,8 @@ class update_choice extends external_api {
                 new external_value(PARAM_TEXT, 'Option text'),
                 'Current choice options'
             ),
+            'timeopen' => new external_value(PARAM_INT, 'Current opening timestamp (0 = no limit)'),
+            'timeclose' => new external_value(PARAM_INT, 'Current closing timestamp (0 = no limit)'),
             'message' => new external_value(PARAM_TEXT, 'Success message'),
         ]);
     }

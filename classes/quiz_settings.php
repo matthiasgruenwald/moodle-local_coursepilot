@@ -52,6 +52,8 @@ class quiz_settings {
             'visible' => (int) $cmrecord->visible,
             'gradepass' => (float) ($gradeitem->gradepass ?? 0),
             'timelimit' => (int) $quiz->timelimit,
+            'timeopen' => (int) $quiz->timeopen,
+            'timeclose' => (int) $quiz->timeclose,
             'completion' => (int) $cmrecord->completion,
             'completionusegrade' => isset($cmrecord->completiongradeitemnumber) && $cmrecord->completiongradeitemnumber !== null ? 1 : 0,
             'completionpassgrade' => (int) $cmrecord->completionpassgrade,
@@ -104,6 +106,15 @@ class quiz_settings {
             $result['timelimit'] = $base['timelimit'];
         }
 
+        // timeopen/timeclose (#325): kein Modus-Default, reines Patch-Feld wie
+        // timelimit. Sentinel -1 = nicht aendern, 0 = kein Limit.
+        if (($params['timeopen'] ?? -1) >= 0) {
+            $result['timeopen'] = $params['timeopen'];
+        }
+        if (($params['timeclose'] ?? -1) >= 0) {
+            $result['timeclose'] = $params['timeclose'];
+        }
+
         $result['overallfeedback'] = ($modegiven || $textgiven) ? $overridden['overallfeedback'] : null;
 
         if (($params['name'] ?? '') !== '') {
@@ -135,6 +146,8 @@ class quiz_settings {
         $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
         $quiz->name = $patched['name'];
         $quiz->timelimit = $patched['timelimit'];
+        $quiz->timeopen = $patched['timeopen'];
+        $quiz->timeclose = $patched['timeclose'];
         foreach (self::quiz_table_field_names() as $field) {
             $quiz->{$field} = $patched[$field];
         }
@@ -199,6 +212,8 @@ class quiz_settings {
             'attempts'           => (int) $quiz->attempts,
             'grademethod'        => (int) $quiz->grademethod,
             'gradepass'          => (float) ($gradeitem->gradepass ?? 0),
+            'timeopen'           => (int) $quiz->timeopen,
+            'timeclose'          => (int) $quiz->timeclose,
             'decimalpoints'      => (int) $quiz->decimalpoints,
             'completion'         => (int) $cmrecord->completion,
             'completionusegrade' => isset($cmrecord->completiongradeitemnumber) && $cmrecord->completiongradeitemnumber !== null ? 1 : 0,
