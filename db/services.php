@@ -354,6 +354,19 @@ $functions = [
     ],
 
     // ----------------------------------------------------------------
+    // Versionstreuer XML-Frageimport (Issue #327, KP-011, ADR-0001-Nachtrag)
+    // ----------------------------------------------------------------
+    'local_coursepilot_import_questions_xml' => [
+        'classname'     => 'local_coursepilot\external\import_questions_xml',
+        'description'   => 'Imports Moodle-XML question content via qformat_xml + question_type::save_question(). ' .
+            'Reimport of a question matched by idnumber creates a new version of the same question bank entry ' .
+            'instead of a duplicate (ADR-0001). Ambiguous matches are reported without writing until allownew=true.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/question:add',
+    ],
+
+    // ----------------------------------------------------------------
     // Add question bank questions to a quiz (#13, ADR-0001: latest version)
     // ----------------------------------------------------------------
     'local_coursepilot_add_questions_to_quiz' => [
@@ -421,6 +434,7 @@ $services = [
             'local_coursepilot_move_question',
             'local_coursepilot_get_question',
             'local_coursepilot_upload_question_image',
+            'local_coursepilot_import_questions_xml',
             'local_coursepilot_add_questions_to_quiz',
             'local_coursepilot_get_quiz_cleanup_plan',
             'local_coursepilot_get_question_category_cleanup_plan',

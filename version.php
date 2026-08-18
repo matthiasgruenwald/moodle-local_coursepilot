@@ -9,12 +9,32 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081805;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081806;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.51';
+$plugin->release   = '1.0.52';
 
 // Changelog:
+// 1.0.52 (2026081806) – Versionstreuer XML-Frageimport (#327, KP-011, ADR-0001-Nachtrag):
+//   - Neue classes/external/import_questions_xml.php +
+//     local_coursepilot_import_questions_xml: parst Moodle-XML ueber die
+//     reine Parse-API qformat_xml::readquestions() (kein DB-Zugriff) und
+//     schreibt gezielt ueber question_type::save_question() statt
+//     qformat_default::importprocess() (der immer neue
+//     question_bank_entries-Eintraege erzeugt). Ermoeglicht Fragetypen wie
+//     STACK, fuer die Moodle 5.0 keinen public Webservice bietet.
+//   - Wiedererkennung ausschliesslich innerhalb der Zielkategorie: idnumber
+//     massgeblich, Namens-Fallback nur ohne idnumber im XML. Ein Treffer per
+//     idnumber erzeugt eine neue Version desselben Eintrags; jeder unsichere
+//     Fall (idnumber ohne Treffer, Namenstreffer ohne idnumber) ist ein
+//     Verdachtsfall ("skipped_ambiguous") und schreibt nichts, bis ein
+//     erneuter Aufruf mit allownew=true das bestaetigt. Ein Parse-Fehler
+//     bricht den gesamten Aufruf ab, bevor irgendetwas geschrieben wird.
+//   - db/services.php: local_coursepilot_import_questions_xml registriert
+//     und dem Coursepilot-Dienst hinzugefuegt.
+//   - Bekannte Grenze: eingebettete <file>-Bloecke (base64-Bilder im XML)
+//     werden noch nicht in echte Fragenbank-Dateien uebernommen (siehe
+//     Kommentar in import_questions_xml.php).
 // 1.0.51 (2026081805) – Bild-Upload in Fragen + Copy-on-Version (#326, KP-006):
 //   - Neue classes/external/upload_question_image.php +
 //     local_coursepilot_upload_question_image: laedt ein Bild (Base64) in
