@@ -7,6 +7,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->libdir . '/questionlib.php');
+require_once($CFG->libdir . '/filelib.php');
 
 use external_api;
 use external_function_parameters;
@@ -111,6 +112,19 @@ class get_question extends external_api {
 
         $bankentry = $DB->get_record('question_bank_entries', ['id' => $entryid], '*', MUST_EXIST);
 
+        $fs = get_file_storage();
+        $files = array_merge(
+            self::collect_files($fs, $context->id, 'questiontext', $question->id),
+            self::collect_files($fs, $context->id, 'generalfeedback', $question->id)
+        );
+        foreach ($answerlist as $a) {
+            $files = array_merge(
+                $files,
+                self::collect_files($fs, $context->id, 'answer', $a['id']),
+                self::collect_files($fs, $context->id, 'answerfeedback', $a['id'])
+            );
+        }
+
         return [
             'questionid'          => (int) $question->id,
             'questionbankentryid' => (int) $entryid,
@@ -126,7 +140,27 @@ class get_question extends external_api {
             'correctindex'        => $correctindex,
             'selectionmode'       => $selectionmode,
             'answernumbering'     => $answernumbering,
+            'files'               => $files,
         ];
+    }
+
+    /**
+     * Liest die Dateien eines Bereichs (component 'question') und liefert
+     * sie als strukturierte Metadaten (kein pluginfile.php-URL-Aufbau hier,
+     * Issue #326, KP-006 Read-back).
+     */
+    private static function collect_files(\file_storage $fs, int $contextid, string $filearea, int $itemid): array {
+        $result = [];
+        foreach ($fs->get_area_files($contextid, 'question', $filearea, $itemid, 'filepath, filename', false) as $file) {
+            $result[] = [
+                'filearea' => $filearea,
+                'itemid'   => $itemid,
+                'filename' => $file->get_filename(),
+                'filesize' => (int) $file->get_filesize(),
+                'mimetype' => (string) $file->get_mimetype(),
+            ];
+        }
+        return $result;
     }
 
     /**
@@ -187,6 +221,16 @@ class get_question extends external_api {
             'correctindex'        => new external_value(PARAM_INT,   '0-basierter Index der richtigen Antwort in answers[] (-1 wenn keine erkannt)'),
             'selectionmode'       => new external_value(PARAM_ALPHA, 'single oder multiple'),
             'answernumbering'     => new external_value(PARAM_ALPHANUM, 'Nummerierungsstil der Antworten (Kurspilot setzt stets none, KP-007; "123" bei Altfragen vor #324 moeglich)'),
+            'files'               => new external_multiple_structure(
+                new external_single_structure([
+                    'filearea' => new external_value(PARAM_ALPHA, 'Dateibereich (questiontext, generalfeedback, answer, answerfeedback)'),
+                    'itemid'   => new external_value(PARAM_INT,   'questionid (Fragenebene) oder answerid (Antwortebene), je nach Dateibereich'),
+                    'filename' => new external_value(PARAM_FILE,  'Dateiname'),
+                    'filesize' => new external_value(PARAM_INT,   'Dateigroesse in Byte'),
+                    'mimetype' => new external_value(PARAM_RAW,   'MIME-Type'),
+                ]),
+                'Angehaengte Dateien je Bereich (questiontext, generalfeedback, answer, answerfeedback); keine pluginfile.php-URLs'
+            ),
         ]);
     }
 }

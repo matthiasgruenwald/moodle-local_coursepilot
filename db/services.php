@@ -345,6 +345,14 @@ $functions = [
         'ajax'          => false,
     ],
 
+    'local_coursepilot_upload_question_image' => [
+        'classname'     => 'local_coursepilot\external\upload_question_image',
+        'description'   => 'Uploads an image (Base64) into the questiontext or answerfeedback filearea of a question and returns an @@PLUGINFILE@@ snippet.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/question:add',
+    ],
+
     // ----------------------------------------------------------------
     // Add question bank questions to a quiz (#13, ADR-0001: latest version)
     // ----------------------------------------------------------------
@@ -412,6 +420,7 @@ $services = [
             'local_coursepilot_update_mc_question',
             'local_coursepilot_move_question',
             'local_coursepilot_get_question',
+            'local_coursepilot_upload_question_image',
             'local_coursepilot_add_questions_to_quiz',
             'local_coursepilot_get_quiz_cleanup_plan',
             'local_coursepilot_get_question_category_cleanup_plan',

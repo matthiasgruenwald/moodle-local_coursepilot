@@ -9,12 +9,34 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081004;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081805;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.50';
+$plugin->release   = '1.0.51';
 
 // Changelog:
+// 1.0.51 (2026081805) – Bild-Upload in Fragen + Copy-on-Version (#326, KP-006):
+//   - Neue classes/external/upload_question_image.php +
+//     local_coursepilot_upload_question_image: laedt ein Bild (Base64) in
+//     den questiontext- oder answerfeedback-Dateibereich einer MC-Frage
+//     hoch (component 'question', itemid = questionid bzw. answerid).
+//     Nutzt fileupload_helper (#320) fuer Base64-Decodierung, MIME-Pruefung
+//     (nur image/*), 5-MB-Limit und Delete-vor-Write (Idempotenz bei
+//     gleichem Dateinamen). Liefert nur das @@PLUGINFILE@@-Snippet zurueck;
+//     das Einfuegen in questiontext bzw. answers[].feedback erfolgt im
+//     zweiten Schritt ueber local_coursepilot_update_mc_question
+//     (zweiphasiges Muster).
+//   - classes/mc_question_version.php: update() kopiert beim Anlegen einer
+//     neuen Frageversion alle Dateien der Vorgaengerversion
+//     (questiontext/generalfeedback auf Fragenebene, answer/answerfeedback
+//     je Antwort, Antworten-Mapping per Position) per
+//     file_storage::create_file_from_storedfile() auf die neuen Ids - kein
+//     erneuter Upload durch die Lehrkraft noetig.
+//   - get_question.php: liefert zusaetzlich 'files' im Read-back
+//     (filearea, itemid, filename, filesize, mimetype je Bereich; keine
+//     pluginfile.php-URLs).
+//   - db/services.php: local_coursepilot_upload_question_image registriert
+//     und dem Coursepilot-Dienst hinzugefuegt.
 // 1.0.50 (2026081004) – Antwortnummerierung fest auf none (#324, KP-007):
 //   - classes/mc_question_version.php: $form->answernumbering ist jetzt fest
 //     'none' statt 'abc' (galt fuer create_mc_question UND update_mc_question,

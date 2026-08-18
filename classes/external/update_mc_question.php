@@ -99,6 +99,7 @@ class update_mc_question extends external_api {
         // $entry wird durchgereicht, damit das Modul die Fragenbank-Entry
         // nicht ein zweites Mal laden muss.
         $result = mc_question_version::update(
+            $context->id,
             $entry,
             $params['questionid'],
             $params['name'],

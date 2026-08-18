@@ -6,6 +6,7 @@ namespace local_coursepilot;
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/questionlib.php');
+require_once($CFG->libdir . '/filelib.php');
 
 /**
  * Kapselt die Versionserzeugung fuer MC-Fragen ueber Moodles eigene
@@ -64,12 +65,16 @@ class mc_question_version {
      * bleibt fuer bestehende Quiz-Attempts unangetastet, ADR-0001). Die
      * bestehende idnumber der Frage bleibt erhalten.
      *
+     * @param int $contextid Fragenbank-Kontext der Frage (Aufrufer hat ihn
+     *      bereits fuer die Capability-Pruefung aufgeloest); wird fuer den
+     *      Datei-Copy-on-Version (Issue #326, KP-006) gebraucht.
      * @param \stdClass $entry question_bank_entries-Zeile der bestehenden
      *      Frage (z. B. via get_question_bank_entry()), damit der Aufrufer
      *      sie nicht ein zweites Mal laden muss.
      * @return \stdClass {questionid, questionbankentryid, version, previousquestionid, answerids}
      */
     public static function update(
+        int $contextid,
         \stdClass $entry,
         int $oldquestionid,
         string $name,
@@ -89,7 +94,58 @@ class mc_question_version {
 
         $saved = self::save($question, $form);
 
-        return self::result($saved->id, $oldquestionid);
+        $result = self::result($saved->id, $oldquestionid);
+        self::copy_files_to_new_version($contextid, $oldquestionid, $result->questionid, $result->answerids);
+
+        return $result;
+    }
+
+    /**
+     * Kopiert alle an der Vorgaengerversion haengenden Dateien
+     * (questiontext, generalfeedback auf Fragenebene; answer, answerfeedback
+     * je Antwort) auf die neue Version (Issue #326, KP-006). Kein erneuter
+     * Upload durch die Lehrkraft noetig. Antworten werden per Position
+     * gematcht (gleiche Reihenfolge wie in $answers uebergeben); Antworten
+     * ohne Gegenstueck in der neuen Version (Anzahl geaendert) werden
+     * uebersprungen.
+     */
+    private static function copy_files_to_new_version(
+        int $contextid,
+        int $oldquestionid,
+        int $newquestionid,
+        array $newanswerids
+    ): void {
+        global $DB;
+
+        $fs = get_file_storage();
+
+        foreach (['questiontext', 'generalfeedback'] as $filearea) {
+            self::copy_area_files($fs, $contextid, $filearea, $oldquestionid, $newquestionid);
+        }
+
+        $oldanswerids = array_map('intval', array_values($DB->get_records_menu(
+            'question_answers', ['question' => $oldquestionid], 'id ASC', 'id, id')));
+
+        $pairs = min(count($oldanswerids), count($newanswerids));
+        for ($i = 0; $i < $pairs; $i++) {
+            foreach (['answer', 'answerfeedback'] as $filearea) {
+                self::copy_area_files($fs, $contextid, $filearea, $oldanswerids[$i], $newanswerids[$i]);
+            }
+        }
+    }
+
+    /** Kopiert alle Dateien eines Bereichs (component 'question') von einem alten auf ein neues itemid. */
+    private static function copy_area_files(
+        \file_storage $fs,
+        int $contextid,
+        string $filearea,
+        int $olditemid,
+        int $newitemid
+    ): void {
+        $files = $fs->get_area_files($contextid, 'question', $filearea, $olditemid, 'filepath, filename', false);
+        foreach ($files as $file) {
+            $fs->create_file_from_storedfile(['itemid' => $newitemid], $file);
+        }
     }
 
     /** Ruft die echte Moodle-Core-API auf: qtype_multichoice::save_question(). */
