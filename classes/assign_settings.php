@@ -93,6 +93,12 @@ class assign_settings {
         if (($params['description'] ?? '') !== '') {
             $moduleinfo->intro = $params['description'];
             $moduleinfo->introformat = FORMAT_HTML;
+            // update_moduleinfo() reads the description from introeditor, not from intro/introformat.
+            // Without this sync, the stale draft from snapshot() overwrites the new text.
+            if (isset($moduleinfo->introeditor) && is_array($moduleinfo->introeditor)) {
+                $moduleinfo->introeditor['text'] = $params['description'];
+                $moduleinfo->introeditor['format'] = FORMAT_HTML;
+            }
         }
         if (($params['duedate'] ?? -1) >= 0) {
             $moduleinfo->duedate = $params['duedate'];

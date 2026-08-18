@@ -80,6 +80,13 @@ class update_assign extends external_api {
         update_moduleinfo($cm, $moduleinfo, $course);
         rebuild_course_cache($cm->course, true);
 
+        if (($params['description'] ?? '') !== '') {
+            $savedintro = $DB->get_field('assign', 'intro', ['id' => $cm->instance], MUST_EXIST);
+            if ($savedintro !== $params['description']) {
+                throw new \invalid_parameter_exception('Die Aufgabenbeschreibung wurde nicht gespeichert.');
+            }
+        }
+
         return array_merge([
             'cmid' => $cm->id,
             'message' => 'Assignment updated successfully.',
