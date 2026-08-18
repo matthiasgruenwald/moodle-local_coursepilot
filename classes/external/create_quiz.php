@@ -421,6 +421,8 @@ class create_quiz extends external_api {
 
     public static function saved_settings_return_structure(): array {
         $fields = [
+            'name'               => new external_value(PARAM_TEXT, 'Saved quiz title'),
+            'visible'            => new external_value(PARAM_INT, 'Saved visibility'),
             'preferredbehaviour' => new external_value(PARAM_TEXT, 'Saved question behaviour'),
             'questionsperpage'   => new external_value(PARAM_INT, 'Saved questions per page'),
             'attempts'           => new external_value(PARAM_INT, 'Saved attempt limit'),
