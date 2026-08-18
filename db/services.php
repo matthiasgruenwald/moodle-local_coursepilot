@@ -248,6 +248,20 @@ $functions = [
         'capabilities'  => 'moodle/course:manageactivities',
     ],
 
+    // Clones a single activity into another course (Spec 0013 KP-010,
+    // cross-course path of moodle_clone_activity): no core webservice
+    // covers this case, so this local adapter drives backup_controller/
+    // restore_controller directly. Capabilities are checked explicitly in
+    // the handler (source-course backup + target-course restore/manage),
+    // the 'capabilities' entry below only documents that.
+    'local_coursepilot_clone_activity_to_course' => [
+        'classname'     => 'local_coursepilot\external\clone_activity_to_course',
+        'description'   => 'Clones a single activity into another course via backup/restore (Spec 0013 KP-010, cross-course path). Requires moodle/backup:backuptargetimport in the source course and moodle/restore:restoretargetimport plus moodle/course:manageactivities in the target course.',
+        'type'          => 'write',
+        'ajax'          => false,
+        'capabilities'  => 'moodle/backup:backuptargetimport, moodle/restore:restoretargetimport, moodle/course:manageactivities',
+    ],
+
     // ----------------------------------------------------------------
     // Get course sections (read existing structure)
     // ----------------------------------------------------------------
@@ -453,6 +467,10 @@ $services = [
             // Aktivitaetstypen ohne eigenes Kurspilot-Update-Tool.
             'core_course_get_course_module',
             'core_update_inplace_editable',
+            // Lokaler Adapter fuer moodle_clone_activity (#329, Spec 0013
+            // KP-010, kursuebergreifender Pfad): kein Core-Webservice deckt
+            // das Klonen einer Aktivitaet in einen anderen Kurs ab.
+            'local_coursepilot_clone_activity_to_course',
         ],
         'restrictedusers' => 0,
         'enabled'         => 1,

@@ -9,12 +9,34 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_coursepilot';
-$plugin->version   = 2026081807;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
+$plugin->version   = 2026081808;  // Format: YYYYMMDDNN – NN bei mehreren Releases pro Tag hochzählen
 $plugin->requires  = 2025041400;  // Moodle 5.0+
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0.53';
+$plugin->release   = '1.0.54';
 
 // Changelog:
+// 1.0.54 (2026081808) – Aktivitaet klonen, kursuebergreifend (#329, KP-010, Spec 0013):
+//   - Neue classes/external/clone_activity_to_course.php +
+//     local_coursepilot_clone_activity_to_course: zweiter Adapter hinter
+//     demselben moodle_clone_activity-Seam (#328) fuer den Fall Zielkurs !=
+//     Quellkurs - dafuer gibt es keinen Core-Webservice. Nutzt
+//     backup_controller(TYPE_1ACTIVITY, MODE_IMPORT) im Quellkurs, dann
+//     restore_controller(MODE_IMPORT, TARGET_CURRENT_ADDING) im Zielkurs -
+//     dieselben Primitiven, die Moodles eigenes duplicate_module()
+//     (course/lib.php) fuer den Intra-Kurs-Fall nutzt. Die neue cmid wird
+//     wie dort ueber restore_activity_task::get_moduleid() ermittelt,
+//     gematcht per alter Kontext-ID der Quellaktivitaet.
+//   - Explizite Capability-Pruefung: moodle/backup:backuptargetimport im
+//     Quellkurs, moodle/restore:restoretargetimport und
+//     moodle/course:manageactivities im Zielkurs - zusaetzlich zur
+//     ueblichen local/coursepilot:use-Gatung in beiden validierten
+//     Kurskontexten (Quelle und Ziel).
+//   - lib/core-tools.js: moodle_clone_activity waehlt den Pfad automatisch
+//     anhand courseid (abweichend = kursuebergreifend). Titel-/Sichtbar-
+//     keits-Nachbearbeitung (renameClonedModule/setCmVisibility) und die
+//     Hinweise auf geerbte Completion/Voraussetzungen
+//     (inheritedSettingsNotes()) werden zwischen beiden Pfaden geteilt,
+//     nicht dupliziert.
 // 1.0.53 (2026081807) – Aktivitaet klonen, Intra-Kurs (#328, KP-010, Spec 0013):
 //   - Neues Tool moodle_clone_activity (lib/core-tools.js): wrappt den
 //     bereits registrierten Core-Webservice core_courseformat_update_course
@@ -37,8 +59,9 @@ $plugin->release   = '1.0.53';
 //     sonst generisch ueber core_update_inplace_editable.
 //   - Response enthaelt Hinweise (notes[]), wenn Completion- oder
 //     Voraussetzungs-Einstellungen von der Quelle uebernommen wurden.
-//   - Kursuebergreifendes Klonen (KP-010 zweiter Pfad) ist bewusst nicht
-//     Teil dieses Tools - siehe Spec 0013.
+//   - Kursuebergreifendes Klonen (KP-010 zweiter Pfad) war zum Zeitpunkt
+//     dieses Releases bewusst noch nicht Teil dieses Tools - siehe #329
+//     (1.0.54) fuer den Backup/Restore-Adapter, der diese Luecke schliesst.
 // 1.0.52 (2026081806) – Versionstreuer XML-Frageimport (#327, KP-011, ADR-0001-Nachtrag):
 //   - Neue classes/external/import_questions_xml.php +
 //     local_coursepilot_import_questions_xml: parst Moodle-XML ueber die
