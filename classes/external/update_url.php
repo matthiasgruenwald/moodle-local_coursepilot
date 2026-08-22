@@ -5,6 +5,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/mod/url/locallib.php');
 
 use external_api;
 use external_function_parameters;
@@ -18,7 +19,7 @@ class update_url extends external_api {
         return new external_function_parameters([
             'cmid'        => new external_value(PARAM_INT,  'Course module ID'),
             'name'        => new external_value(PARAM_TEXT, 'New display name', VALUE_DEFAULT, ''),
-            'externalurl' => new external_value(PARAM_URL,  'New external URL', VALUE_DEFAULT, ''),
+            'externalurl' => new external_value(PARAM_RAW_TRIMMED, 'New external URL', VALUE_DEFAULT, ''),
             'intro'       => new external_value(PARAM_RAW,  'New description', VALUE_DEFAULT, ''),
             'visible'     => new external_value(PARAM_INT,  '1 = visible, 0 = hidden, -1 = no change', VALUE_DEFAULT, -1),
         ]);
@@ -37,6 +38,10 @@ class update_url extends external_api {
         self::validate_context($context);
         require_capability('local/coursepilot:use', $context);
         require_capability('moodle/course:manageactivities', $context);
+
+        if ($params['externalurl'] !== '' && !url_appears_valid_url($params['externalurl'])) {
+            throw new \invalid_parameter_exception('Ungueltige externalurl: "' . $params['externalurl'] . '".');
+        }
 
         $url = $DB->get_record('url', ['id' => $cm->instance], '*', MUST_EXIST);
         if ($params['name'] !== '')        $url->name        = $params['name'];

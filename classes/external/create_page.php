@@ -70,7 +70,6 @@ class create_page extends external_api {
         $moduleinfo->content      = $params['content'];
         $moduleinfo->contentformat = FORMAT_HTML;
         $moduleinfo->display      = 5; // Display in page.
-        $moduleinfo->printheading = 1;
         $moduleinfo->printintro   = 0;
         $moduleinfo->printlastmodified = 1;
 

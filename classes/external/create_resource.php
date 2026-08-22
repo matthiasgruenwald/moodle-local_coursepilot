@@ -77,7 +77,7 @@ class create_resource extends external_api {
         $moduleinfo->intro          = '';
         $moduleinfo->introformat    = FORMAT_HTML;
         $moduleinfo->display        = 0; // Automatic.
-        $moduleinfo->displayoptions = serialize(['printintro' => 0]);
+        $moduleinfo->printintro     = 0;
         $moduleinfo->revision       = 1;
         $moduleinfo->files          = 0; // Kein Draft-Bereich; Hauptdatei wird unten direkt im content-Filearea angelegt.
 

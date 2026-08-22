@@ -8,6 +8,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/course/modlib.php');
+require_once($CFG->dirroot . '/mod/url/locallib.php');
 
 use external_api;
 use external_function_parameters;
@@ -25,7 +26,7 @@ class create_url extends external_api {
             'courseid'    => new external_value(PARAM_INT,  'Course ID'),
             'sectionnum'  => new external_value(PARAM_INT,  'Section number (0-based)'),
             'name'        => new external_value(PARAM_TEXT, 'Display name of the link'),
-            'externalurl' => new external_value(PARAM_URL,  'Full external URL including https://'),
+            'externalurl' => new external_value(PARAM_RAW_TRIMMED, 'Full external URL including https://'),
             'intro'       => new external_value(PARAM_RAW,  'Short description (optional)', VALUE_DEFAULT, ''),
             'visible'     => new external_value(PARAM_INT,  'Visible (1) or hidden (0)', VALUE_DEFAULT, 1),
         ]);
@@ -42,6 +43,10 @@ class create_url extends external_api {
             'intro'       => $intro,
             'visible'     => $visible,
         ]);
+
+        if (!url_appears_valid_url($params['externalurl'])) {
+            throw new \invalid_parameter_exception('Ungueltige externalurl: "' . $params['externalurl'] . '".');
+        }
 
         $context = context_course::instance($params['courseid']);
         self::validate_context($context);
@@ -61,7 +66,7 @@ class create_url extends external_api {
         $moduleinfo->introformat  = FORMAT_HTML;
         $moduleinfo->externalurl  = $params['externalurl'];
         $moduleinfo->display      = 0; // In neuem Tab öffnen
-        $moduleinfo->displayoptions = serialize(['printintro' => 0]);
+        $moduleinfo->printintro   = 0;
 
         $moduleinfo = add_moduleinfo($moduleinfo, $course);
 

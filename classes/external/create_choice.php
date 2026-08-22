@@ -62,6 +62,8 @@ class create_choice extends external_api {
         if (count($cleanoptions) < 2) {
             throw new \invalid_parameter_exception('Eine Abstimmung braucht mindestens 2 Optionen.');
         }
+        // Kurspilot-Vorgabe, keine Moodle-Grenze: mod_choice erlaubt beliebig viele Optionen.
+        // Bewusste didaktische Vereinfachung fuer Lehrkraefte (siehe Issue #357).
         if (count($cleanoptions) > 6) {
             throw new \invalid_parameter_exception('Eine Abstimmung hat maximal 6 Optionen.');
         }
